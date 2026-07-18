@@ -7,16 +7,48 @@ const State = {
   products: [],
   cart: [],
   currentEdit: null,        // { type: 'category'|'product', id, data }
-  currentUploadedImageUrl: null, // URL de l'image uploadée via Cloudinary
-  uploadTarget: null        // 'category' ou 'product' pour savoir où appliquer l'image
+  currentUploadedImageUrl: null,
+  uploadTarget: null,
+  user: null                // utilisateur connecté (objet traité par Business)
 };
 
 const Core = {
   // --- INIT ---
   async init() {
-    await this.loadData();
-    this.setupListeners();
-    this.renderCurrentState();
+    // Attacher l'écouteur d'authentification
+    DB.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Traiter les données utilisateur
+        const userData = Business.processFacebookUser(user);
+        State.user = userData;
+        // Charger les données de l'application
+        await this.loadData();
+        // Afficher l'UI de l'application
+        UI.showApp(userData);
+        // Mettre à jour l'état de l'UI (toggle, etc.)
+        this.renderCurrentState();
+        // Brancher les listeners (déjà faits mais on peut les réattacher)
+        this.setupListeners();
+      } else {
+        State.user = null;
+        UI.showLoginScreen();
+        // Masquer les éléments utilisateur
+        document.getElementById('user-avatar').classList.add('hidden');
+        document.getElementById('user-name').classList.add('hidden');
+        document.getElementById('btn-logout').classList.add('hidden');
+        // On peut aussi vider le panier ?
+        State.cart = [];
+        UI.updateCartCount(0);
+      }
+    });
+
+    // Ajouter les écouteurs pour les boutons de connexion/déconnexion
+    document.getElementById('btn-login-facebook').addEventListener('click', () => {
+      this.handleLogin();
+    });
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      this.handleLogout();
+    });
   },
 
   async loadData() {
@@ -25,11 +57,20 @@ const Core = {
   },
 
   setupListeners() {
+    // On évite de dupliquer les listeners en les ajoutant une seule fois.
+    // Nous allons les ajouter dans init après le chargement.
+    // Mais on peut les mettre ici et les appeler après le rendu.
+    // Pour éviter les doublons, on les met dans init directement.
+    // On va plutôt utiliser une approche avec des flags.
+    // Pour simplifier, on les attache une seule fois au chargement.
+    // On va utiliser une variable pour savoir s'ils sont déjà attachés.
+    if (this._listenersAttached) return;
+    this._listenersAttached = true;
+
     // Toggle Rôle
     document.getElementById('role-toggle').addEventListener('change', (e) => {
       State.role = e.target.checked ? 'vendor' : 'client';
       State.view = 'categories';
-      // Annuler toute édition en cours
       this.cancelEdit();
       this.renderCurrentState();
     });
@@ -45,6 +86,7 @@ const Core = {
   },
 
   renderCurrentState() {
+    if (!State.user) return; // pas connecté
     if (State.role === 'vendor') {
       UI.renderVendorView(State.categories, State.products);
     } else {
@@ -117,7 +159,6 @@ const Core = {
     const cat = await DB.getCategoryById(id);
     if (!cat) return;
     State.currentEdit = { type: 'category', id, data: { ...cat } };
-    // On nettoie l'image uploadée précédente
     State.currentUploadedImageUrl = null;
     this.renderCurrentState();
   },
@@ -172,9 +213,7 @@ const Core = {
 
   // --- CLOUDINARY WIDGET ---
   openCloudinaryWidget(target) {
-    State.uploadTarget = target; // 'category' ou 'product'
-    // Réinitialiser l'URL précédente pour éviter les confusions
-    // mais on garde la preview actuelle.
+    State.uploadTarget = target;
     if (!window.cloudinary) {
       alert('Cloudinary widget non chargé.');
       return;
@@ -189,7 +228,7 @@ const Core = {
         folder: 'lassoshop',
         resourceType: 'image',
         clientAllowedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
-        maxFileSize: 5000000 // 5 Mo
+        maxFileSize: 5000000
       },
       (error, result) => {
         if (error) {
@@ -198,15 +237,32 @@ const Core = {
         }
         if (result && result.event === 'success') {
           const imageUrl = result.info.secure_url;
-          // Stocker l'URL dans l'état
           State.currentUploadedImageUrl = imageUrl;
-          // Mettre à jour l'aperçu dans l'UI
           UI.updateImagePreview(imageUrl);
-          // On peut aussi re-render pour mettre à jour les champs, mais UI.updateImagePreview le fait
         }
       }
     );
     widget.open();
+  },
+
+  // --- AUTHENTIFICATION (pont entre UI et Firebase) ---
+  async handleLogin() {
+    try {
+      await DB.loginWithFacebook();
+      // L'écouteur onAuthStateChanged gérera la mise à jour
+    } catch (error) {
+      console.error('Erreur lors de la connexion :', error);
+      alert('Impossible de se connecter avec Facebook. Veuillez réessayer.');
+    }
+  },
+
+  async handleLogout() {
+    try {
+      await DB.logout();
+      // L'écouteur gérera la déconnexion
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion :', error);
+    }
   }
 };
 
