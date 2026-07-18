@@ -4,6 +4,30 @@ const UI = {
   cartBtn: document.getElementById('btn-cart'),
   cartModal: document.getElementById('cart-modal'),
   cartContent: document.getElementById('cart-content'),
+  loginScreen: document.getElementById('login-screen'),
+  appWrapper: document.getElementById('app-wrapper'),
+  userAvatar: document.getElementById('user-avatar'),
+  userName: document.getElementById('user-name'),
+  logoutBtn: document.getElementById('btn-logout'),
+
+  // --- Gestion de l'UI selon l'utilisateur ---
+  showLoginScreen() {
+    this.loginScreen.classList.remove('hidden');
+    this.appWrapper.classList.add('hidden');
+  },
+
+  showApp(userData) {
+    this.loginScreen.classList.add('hidden');
+    this.appWrapper.classList.remove('hidden');
+    // Mettre à jour les infos utilisateur dans le header
+    if (userData) {
+      this.userAvatar.src = userData.avatar || 'https://via.placeholder.com/40';
+      this.userAvatar.classList.remove('hidden');
+      this.userName.textContent = userData.name || 'Utilisateur';
+      this.userName.classList.remove('hidden');
+      this.logoutBtn.classList.remove('hidden');
+    }
+  },
 
   // --- VUE CLIENT ---
   renderClientCategories(categories) {
@@ -54,7 +78,10 @@ const UI = {
   renderVendorView(categories, products) {
     this.cartBtn.classList.add('hidden');
 
-    // Formulaire unique pour catégorie (ajout / modification)
+    // ... (le code de la vue vendeur est inchangé, on le reprend intégralement)
+    // Pour éviter de dupliquer, on le réutilise depuis la version précédente.
+    // Je vais copier le contenu complet de la fonction ici pour être exhaustif.
+
     const isEditingCategory = State.currentEdit && State.currentEdit.type === 'category';
     const catData = isEditingCategory ? State.currentEdit.data : null;
 
@@ -80,7 +107,6 @@ const UI = {
       </div>
     `;
 
-    // Formulaire unique pour produit
     const isEditingProduct = State.currentEdit && State.currentEdit.type === 'product';
     const prodData = isEditingProduct ? State.currentEdit.data : null;
 
@@ -108,7 +134,6 @@ const UI = {
       </div>
     `;
 
-    // Liste des catégories avec bouton Modifier
     const categoriesList = `
       <div class="mb-6">
         <h4 class="text-lg font-medium mb-3">Catégories existantes</h4>
@@ -126,7 +151,6 @@ const UI = {
       </div>
     `;
 
-    // Liste des produits avec bouton Modifier
     const productsList = `
       <div>
         <h4 class="text-lg font-medium mb-3">Produits existants</h4>
@@ -158,16 +182,14 @@ const UI = {
 
   // --- METTRE À JOUR LA PREVIEW D'IMAGE ---
   updateImagePreview(imageUrl) {
-    // On recherche la première preview dans le formulaire actuel (simplifié)
+    // on met à jour l'aperçu dans le formulaire actif
     const previews = this.container.querySelectorAll('.vendor-form img');
     if (previews.length) {
-      // On met à jour la première trouvée (celle du formulaire actif)
-      const img = previews[previews.length - 1]; // la plus récente
+      const img = previews[previews.length - 1];
       img.src = imageUrl;
       img.alt = 'Aperçu';
     } else {
-      // Si aucune preview, on peut en créer une à côté du bouton (mais on préfère que le formulaire soit déjà construit)
-      // On va simplement forcer un re-render
+      // si pas de preview, re-render
       this.renderVendorView(State.categories, State.products);
     }
   },
@@ -218,7 +240,7 @@ const UI = {
     const el = document.getElementById(id);
     if (!el) return '';
     const val = el.value;
-    el.value = ''; // reset après récupération (sauf si on veut conserver)
+    el.value = ''; // reset après récupération
     return val;
   },
 
