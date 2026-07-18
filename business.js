@@ -1,46 +1,70 @@
 // Responsable UNIQUEMENT de la logique métier, des calculs et du formatage.
-
 const Business = {
-    generateId() {
-        return Math.random().toString(36).substr(2, 9);
-    },
+  generateId() {
+    return Math.random().toString(36).substr(2, 9);
+  },
 
-    formatPrice(price) {
-        return parseFloat(price).toFixed(2) + ' €';
-    },
+  formatPrice(price) {
+    return parseFloat(price).toFixed(2) + ' €';
+  },
 
-    createCategory(name) {
-        if (!name.trim()) throw new Error("Le nom de la catégorie est requis.");
-        return { id: this.generateId(), name: name.trim() };
-    },
+  // --- Création avec image ---
+  createCategory(name, imageUrl = null) {
+    if (!name || !name.trim()) throw new Error('Le nom de la catégorie est requis.');
+    return {
+      id: this.generateId(),
+      name: name.trim(),
+      imageUrl: imageUrl || 'https://via.placeholder.com/150'
+    };
+  },
 
-    createProduct(name, price, categoryId) {
-        if (!name.trim() || price <= 0 || !categoryId) {
-            throw new Error("Données du produit invalides.");
-        }
-        return {
-            id: this.generateId(),
-            name: name.trim(),
-            price: parseFloat(price),
-            categoryId: categoryId
-        };
-    },
+  createProduct(name, price, categoryId, imageUrl = null) {
+    if (!name || !name.trim()) throw new Error('Le nom du produit est requis.');
+    if (isNaN(price) || price <= 0) throw new Error('Le prix doit être un nombre positif.');
+    if (!categoryId) throw new Error('La catégorie est requise.');
+    return {
+      id: this.generateId(),
+      name: name.trim(),
+      price: parseFloat(price),
+      categoryId,
+      imageUrl: imageUrl || 'https://via.placeholder.com/150'
+    };
+  },
 
-    addToCart(cart, product) {
-        const existing = cart.find(item => item.id === product.id);
-        if (existing) {
-            return cart.map(item => 
-                item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-            );
-        }
-        return [...cart, { ...product, quantity: 1 }];
-    },
+  // --- Validation pour modification ---
+  validateCategoryUpdate(name, imageUrl) {
+    if (!name || !name.trim()) throw new Error('Le nom de la catégorie est requis.');
+    return { name: name.trim(), imageUrl: imageUrl || undefined };
+  },
 
-    calculateCartTotal(cart) {
-        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    },
-    
-    getProductsByCategory(products, categoryId) {
-        return products.filter(p => p.categoryId === categoryId);
+  validateProductUpdate(name, price, categoryId, imageUrl) {
+    if (!name || !name.trim()) throw new Error('Le nom du produit est requis.');
+    if (isNaN(price) || price <= 0) throw new Error('Le prix doit être un nombre positif.');
+    if (!categoryId) throw new Error('La catégorie est requise.');
+    return {
+      name: name.trim(),
+      price: parseFloat(price),
+      categoryId,
+      imageUrl: imageUrl || undefined
+    };
+  },
+
+  // --- Panier ---
+  addToCart(cart, product) {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      return cart.map(item =>
+        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+      );
     }
+    return [...cart, { ...product, quantity: 1 }];
+  },
+
+  calculateCartTotal(cart) {
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  },
+
+  getProductsByCategory(products, categoryId) {
+    return products.filter(p => p.categoryId === categoryId);
+  }
 };
