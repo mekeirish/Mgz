@@ -1,0 +1,2 @@
+# Mgz
+magasins
