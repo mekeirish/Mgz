@@ -1,0 +1,47 @@
+/* Lassomorphisme : Pas d'ombres (box-shadow: none), effet de verre dépoli */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: none;
+}
+
+.glass-input {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    outline: none;
+    box-shadow: none;
+}
+
+.glass-input:focus {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.glass-btn {
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: background 0.2s ease;
+    box-shadow: none;
+}
+
+.glass-btn:active {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animation du Toggle */
+input:checked ~ .dot {
+    transform: translateX(100%);
+}
+input:checked ~ .glass-input {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Masquer les barres de défilement pour l'esthétique */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
