@@ -5,14 +5,16 @@ const UI = {
   cartModal: document.getElementById('cart-modal'),
   cartContent: document.getElementById('cart-content'),
 
+  // --- VUE CLIENT ---
   renderClientCategories(categories) {
     this.container.innerHTML = `
       <h2 class="text-2xl font-bold mb-4">Catégories</h2>
       <div class="flex flex-col gap-6">
         ${categories.map(cat => `
-          <button onclick="Core.selectCategory('${cat.id}')" 
-                  class="glass-panel p-6 rounded-2xl text-left text-xl font-medium hover:bg-white/30 transition-colors">
-            ${cat.name}
+          <button onclick="Core.selectCategory('${cat.id}')"
+                  class="glass-panel p-6 rounded-2xl text-left text-xl font-medium hover:bg-white/30 transition-colors flex items-center gap-4">
+            <img src="${cat.imageUrl}" alt="${cat.name}" class="w-12 h-12 rounded-full object-cover border border-white/30" />
+            <span>${cat.name}</span>
           </button>
         `).join('')}
       </div>
@@ -22,7 +24,7 @@ const UI = {
 
   renderClientProducts(category, products) {
     this.container.innerHTML = `
-      <button onclick="Core.showCategories()" 
+      <button onclick="Core.showCategories()"
               class="glass-btn px-5 py-3 rounded-xl w-fit mb-5 text-base font-medium">
         ← Retour
       </button>
@@ -31,11 +33,14 @@ const UI = {
         ${products.length === 0 ? '<p class="opacity-70 text-lg">Aucun produit.</p>' : ''}
         ${products.map(p => `
           <div class="glass-panel product-card rounded-2xl">
-            <div class="product-info">
-              <div class="product-name">${p.name}</div>
-              <div class="product-price">${Business.formatPrice(p.price)}</div>
+            <div class="product-info flex items-center gap-3">
+              <img src="${p.imageUrl}" alt="${p.name}" class="w-14 h-14 rounded-full object-cover border border-white/30 flex-shrink-0" />
+              <div>
+                <div class="product-name">${p.name}</div>
+                <div class="product-price">${Business.formatPrice(p.price)}</div>
+              </div>
             </div>
-            <button onclick="Core.handleAddToCart('${p.id}')" 
+            <button onclick="Core.handleAddToCart('${p.id}')"
                     class="glass-btn product-action px-5 py-3 text-sm font-medium">
               + Panier
             </button>
@@ -45,41 +50,129 @@ const UI = {
     `;
   },
 
-  renderVendorView(categories) {
+  // --- VUE VENDEUR ---
+  renderVendorView(categories, products) {
     this.cartBtn.classList.add('hidden');
-    this.container.innerHTML = `
-      <h2 class="text-2xl font-bold mb-5">Espace Vendeur</h2>
 
-      <!-- Ajouter Catégorie -->
+    // Formulaire unique pour catégorie (ajout / modification)
+    const isEditingCategory = State.currentEdit && State.currentEdit.type === 'category';
+    const catData = isEditingCategory ? State.currentEdit.data : null;
+
+    const catFormHtml = `
       <div class="glass-panel p-6 rounded-2xl mb-7">
-        <h3 class="text-xl font-medium mb-4">Nouvelle Catégorie</h3>
-        <div class="flex flex-col sm:flex-row gap-4 vendor-form">
-          <input type="text" id="cat-name" placeholder="Nom de la catégorie..." 
-                 class="glass-input flex-1 w-full">
-          <button onclick="Core.handleAddCategory()" 
-                  class="glass-btn px-5 py-3 w-full sm:w-auto font-medium">
-            Ajouter
+        <h3 class="text-xl font-medium mb-4">${isEditingCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}</h3>
+        <div class="flex flex-col gap-4 vendor-form">
+          <input type="text" id="cat-name" placeholder="Nom de la catégorie..."
+                 class="glass-input w-full" value="${catData ? catData.name : ''}" />
+          <div class="flex items-center gap-4">
+            <button onclick="Core.openCloudinaryWidget('category')"
+                    class="glass-btn px-5 py-3 text-sm font-medium">
+              Choisir une image
+            </button>
+            ${State.currentUploadedImageUrl ? `<img src="${State.currentUploadedImageUrl}" alt="Aperçu" class="w-12 h-12 rounded-full object-cover border border-white/30" />` : ''}
+          </div>
+          <button onclick="${isEditingCategory ? "Core.submitEditCategory()" : "Core.handleAddCategory()"}"
+                  class="glass-btn px-5 py-3 w-full font-medium">
+            ${isEditingCategory ? 'Mettre à jour' : 'Ajouter'}
           </button>
+          ${isEditingCategory ? `<button onclick="Core.cancelEdit()" class="glass-btn px-5 py-3 w-full font-medium mt-2">Annuler</button>` : ''}
         </div>
       </div>
+    `;
 
-      <!-- Ajouter Produit -->
+    // Formulaire unique pour produit
+    const isEditingProduct = State.currentEdit && State.currentEdit.type === 'product';
+    const prodData = isEditingProduct ? State.currentEdit.data : null;
+
+    const prodFormHtml = `
       <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4 vendor-form">
-        <h3 class="text-xl font-medium mb-1">Nouveau Produit</h3>
+        <h3 class="text-xl font-medium mb-1">${isEditingProduct ? 'Modifier le produit' : 'Nouveau produit'}</h3>
         <select id="prod-cat" class="glass-input w-full">
           <option value="">Choisir une catégorie...</option>
-          ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+          ${categories.map(c => `<option value="${c.id}" ${prodData && prodData.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
         </select>
-        <input type="text" id="prod-name" placeholder="Nom du produit" class="glass-input w-full">
-        <input type="number" id="prod-price" placeholder="Prix (€)" class="glass-input w-full">
-        <button onclick="Core.handleAddProduct()" 
+        <input type="text" id="prod-name" placeholder="Nom du produit" class="glass-input w-full" value="${prodData ? prodData.name : ''}" />
+        <input type="number" id="prod-price" placeholder="Prix (€)" class="glass-input w-full" value="${prodData ? prodData.price : ''}" />
+        <div class="flex items-center gap-4">
+          <button onclick="Core.openCloudinaryWidget('product')"
+                  class="glass-btn px-5 py-3 text-sm font-medium">
+            Choisir une image
+          </button>
+          ${State.currentUploadedImageUrl ? `<img src="${State.currentUploadedImageUrl}" alt="Aperçu" class="w-12 h-12 rounded-full object-cover border border-white/30" />` : ''}
+        </div>
+        <button onclick="${isEditingProduct ? "Core.submitEditProduct()" : "Core.handleAddProduct()"}"
                 class="glass-btn px-5 py-3 w-full font-medium mt-2">
-          Créer le produit
+          ${isEditingProduct ? 'Mettre à jour' : 'Créer le produit'}
         </button>
+        ${isEditingProduct ? `<button onclick="Core.cancelEdit()" class="glass-btn px-5 py-3 w-full font-medium mt-2">Annuler</button>` : ''}
       </div>
+    `;
+
+    // Liste des catégories avec bouton Modifier
+    const categoriesList = `
+      <div class="mb-6">
+        <h4 class="text-lg font-medium mb-3">Catégories existantes</h4>
+        <div class="flex flex-col gap-3">
+          ${categories.map(c => `
+            <div class="glass-panel p-4 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <img src="${c.imageUrl}" alt="${c.name}" class="w-10 h-10 rounded-full object-cover border border-white/30" />
+                <span class="font-medium">${c.name}</span>
+              </div>
+              <button onclick="Core.startEditCategory('${c.id}')" class="glass-btn px-4 py-2 text-sm font-medium">Modifier</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Liste des produits avec bouton Modifier
+    const productsList = `
+      <div>
+        <h4 class="text-lg font-medium mb-3">Produits existants</h4>
+        <div class="flex flex-col gap-3">
+          ${products.map(p => `
+            <div class="glass-panel p-4 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <img src="${p.imageUrl}" alt="${p.name}" class="w-10 h-10 rounded-full object-cover border border-white/30" />
+                <div>
+                  <span class="font-medium">${p.name}</span>
+                  <span class="text-sm opacity-70 ml-2">${Business.formatPrice(p.price)}</span>
+                </div>
+              </div>
+              <button onclick="Core.startEditProduct('${p.id}')" class="glass-btn px-4 py-2 text-sm font-medium">Modifier</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    this.container.innerHTML = `
+      <h2 class="text-2xl font-bold mb-5">Espace Vendeur</h2>
+      ${catFormHtml}
+      ${categoriesList}
+      ${prodFormHtml}
+      ${productsList}
     `;
   },
 
+  // --- METTRE À JOUR LA PREVIEW D'IMAGE ---
+  updateImagePreview(imageUrl) {
+    // On recherche la première preview dans le formulaire actuel (simplifié)
+    const previews = this.container.querySelectorAll('.vendor-form img');
+    if (previews.length) {
+      // On met à jour la première trouvée (celle du formulaire actif)
+      const img = previews[previews.length - 1]; // la plus récente
+      img.src = imageUrl;
+      img.alt = 'Aperçu';
+    } else {
+      // Si aucune preview, on peut en créer une à côté du bouton (mais on préfère que le formulaire soit déjà construit)
+      // On va simplement forcer un re-render
+      this.renderVendorView(State.categories, State.products);
+    }
+  },
+
+  // --- PANIER ---
   updateCartCount(count) {
     document.getElementById('cart-count').innerText = count;
   },
@@ -90,9 +183,12 @@ const UI = {
       ? '<p class="opacity-70 text-center text-lg mt-6">Panier vide</p>'
       : cart.map(item => `
           <div class="glass-panel cart-item rounded-xl">
-            <div class="item-details">
-              <div class="item-name">${item.name}</div>
-              <div class="item-quantity">Qté : ${item.quantity}</div>
+            <div class="item-details flex items-center gap-3">
+              <img src="${item.imageUrl}" alt="${item.name}" class="w-10 h-10 rounded-full object-cover border border-white/30" />
+              <div>
+                <div class="item-name">${item.name}</div>
+                <div class="item-quantity">Qté : ${item.quantity}</div>
+              </div>
             </div>
             <span class="item-total">${Business.formatPrice(item.price * item.quantity)}</span>
           </div>
@@ -106,7 +202,6 @@ const UI = {
     if (show) {
       this.cartModal.classList.remove('hidden');
       this.cartModal.classList.add('flex');
-      // Petit délai pour la transition
       requestAnimationFrame(() => {
         this.cartContent.classList.remove('translate-y-full');
       });
@@ -121,8 +216,14 @@ const UI = {
 
   getInputValue(id) {
     const el = document.getElementById(id);
-    const val = el ? el.value : '';
-    if (el) el.value = ''; // reset après récupération
+    if (!el) return '';
+    const val = el.value;
+    el.value = ''; // reset après récupération (sauf si on veut conserver)
     return val;
+  },
+
+  getInputValueWithoutReset(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
   }
 };
