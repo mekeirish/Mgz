@@ -8,6 +8,24 @@ const Business = {
     return parseFloat(price).toFixed(2) + ' €';
   },
 
+  // --- Traitement des données utilisateur Facebook ---
+  processFacebookUser(user) {
+    if (!user) return null;
+    // Extraire les informations disponibles
+    const name = user.displayName || 'Utilisateur';
+    const email = user.email || '';
+    const photoURL = user.photoURL || 'https://via.placeholder.com/150';
+    // Le rôle par défaut est 'client'
+    const role = 'client';
+    return {
+      uid: user.uid,
+      name,
+      email,
+      avatar: photoURL,
+      role
+    };
+  },
+
   // --- Création avec image ---
   createCategory(name, imageUrl = null) {
     if (!name || !name.trim()) throw new Error('Le nom de la catégorie est requis.');
