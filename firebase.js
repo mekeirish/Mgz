@@ -1,36 +1,50 @@
 // Responsable UNIQUEMENT des accès aux données.
-// Note: Utilisation d'un mock en mémoire pour que tu puisses tester le design instantanément
-// sans erreur de configuration Firebase. Remplace par les vrais appels Firestore ensuite.
-
+// Mock en mémoire pour test – remplacer par Firestore plus tard.
 const DB = {
-    _categories: [
-        { id: 'c1', name: 'Vêtements' },
-        { id: 'c2', name: 'Électronique' }
-    ],
-    _products: [
-        { id: 'p1', categoryId: 'c1', name: 'T-shirt Minimaliste', price: 25 },
-        { id: 'p2', categoryId: 'c2', name: 'Écouteurs sans fil', price: 89 }
-    ],
+  _categories: [
+    { id: 'c1', name: 'Vêtements', imageUrl: 'https://via.placeholder.com/150' },
+    { id: 'c2', name: 'Électronique', imageUrl: 'https://via.placeholder.com/150' }
+  ],
+  _products: [
+    { id: 'p1', categoryId: 'c1', name: 'T-shirt Minimaliste', price: 25, imageUrl: 'https://via.placeholder.com/150' },
+    { id: 'p2', categoryId: 'c2', name: 'Écouteurs sans fil', price: 89, imageUrl: 'https://via.placeholder.com/150' }
+  ],
 
-    async getCategories() {
-        // Logique Firestore : getDocs(collection(db, 'categories'))
-        return [...this._categories];
-    },
+  // --- Lecture ---
+  async getCategories() {
+    return [...this._categories];
+  },
+  async getProducts() {
+    return [...this._products];
+  },
+  async getCategoryById(id) {
+    return this._categories.find(c => c.id === id);
+  },
+  async getProductById(id) {
+    return this._products.find(p => p.id === id);
+  },
 
-    async getProducts() {
-        // Logique Firestore : getDocs(collection(db, 'products'))
-        return [...this._products];
-    },
+  // --- Création ---
+  async addCategory(category) {
+    this._categories.push(category);
+    return category;
+  },
+  async addProduct(product) {
+    this._products.push(product);
+    return product;
+  },
 
-    async addCategory(category) {
-        // Logique Firestore : addDoc(collection(db, 'categories'), category)
-        this._categories.push(category);
-        return category;
-    },
-
-    async addProduct(product) {
-        // Logique Firestore : addDoc(collection(db, 'products'), product)
-        this._products.push(product);
-        return product;
-    }
+  // --- Mise à jour ---
+  async updateCategory(id, data) {
+    const index = this._categories.findIndex(c => c.id === id);
+    if (index === -1) throw new Error('Catégorie introuvable');
+    this._categories[index] = { ...this._categories[index], ...data };
+    return this._categories[index];
+  },
+  async updateProduct(id, data) {
+    const index = this._products.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Produit introuvable');
+    this._products[index] = { ...this._products[index], ...data };
+    return this._products[index];
+  }
 };
