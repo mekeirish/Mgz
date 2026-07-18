@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LassoShop - Glassmorphism</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200 min-h-screen text-gray-800 font-sans antialiased overflow-x-hidden">
+
+    <!-- Header & Navigation -->
+    <header class="glass-panel sticky top-0 z-50 p-4 mb-6 flex justify-between items-center rounded-b-2xl mx-2">
+        <h1 class="text-2xl font-bold tracking-tight">LassoShop</h1>
+        
+        <div class="flex items-center gap-4">
+            <!-- Toggle Vendeur / Client -->
+            <label class="flex items-center cursor-pointer gap-2">
+                <span class="text-sm font-medium">Client</span>
+                <div class="relative">
+                    <input type="checkbox" id="role-toggle" class="sr-only">
+                    <div class="block glass-input w-14 h-8 rounded-full"></div>
+                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300"></div>
+                </div>
+                <span class="text-sm font-medium">Vendeur</span>
+            </label>
+
+            <!-- Bouton Panier (Client uniquement) -->
+            <button id="btn-cart" class="glass-btn px-4 py-2 rounded-xl font-medium hidden">
+                Panier (<span id="cart-count">0</span>)
+            </button>
+        </div>
+    </header>
+
+    <!-- Conteneur Principal -->
+    <main id="app-container" class="max-w-md mx-auto px-4 pb-20 flex flex-col gap-6">
+        <!-- Rendu dynamique géré par ui.js -->
+    </main>
+
+    <!-- Modale Panier -->
+    <div id="cart-modal" class="fixed inset-0 z-50 hidden flex-col justify-end">
+        <div class="absolute inset-0 bg-white/10 backdrop-blur-sm" id="close-cart"></div>
+        <div class="glass-panel w-full h-[70vh] rounded-t-3xl p-6 relative flex flex-col gap-4 transform transition-transform translate-y-full" id="cart-content">
+            <h2 class="text-xl font-bold">Votre Panier</h2>
+            <div id="cart-items" class="flex-1 overflow-y-auto flex flex-col gap-3"></div>
+            <div class="glass-panel p-4 flex justify-between items-center mt-auto">
+                <span class="font-medium">Total:</span>
+                <span id="cart-total" class="font-bold text-lg">0.00 €</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts (Ordre crucial pour LAICHE) -->
+    <script src="firebase.js"></script>
+    <script src="business.js"></script>
+    <script src="ui.js"></script>
+    <script src="core.js"></script>
+</body>
+</html>
