@@ -71,7 +71,7 @@ input:checked ~ .glass-input {
   background: transparent;
 }
 
-/* Espacement global des cartes et blocs */
+/* Espacement des cartes */
 .product-card {
   display: flex;
   flex-wrap: wrap;
@@ -82,7 +82,7 @@ input:checked ~ .glass-input {
 }
 .product-card .product-info {
   flex: 1 1 0;
-  min-width: 0;        /* Permet au texte de couper si nécessaire */
+  min-width: 0;
 }
 .product-card .product-name {
   font-weight: 500;
@@ -100,7 +100,6 @@ input:checked ~ .glass-input {
   flex-shrink: 0;
 }
 
-/* Ajustements pour les champs du vendeur */
 .vendor-form .glass-input,
 .vendor-form .glass-btn {
   width: 100%;
@@ -109,7 +108,6 @@ input:checked ~ .glass-input {
   margin-top: 0.5rem;
 }
 
-/* Modale panier - items */
 .cart-item {
   padding: 1rem 1.25rem;
   display: flex;
@@ -133,4 +131,10 @@ input:checked ~ .glass-input {
   font-weight: 500;
   font-size: 1rem;
   margin-left: 1rem;
+}
+
+/* Modale de connexion */
+#vendor-login-modal .glass-panel {
+  max-width: 400px;
+  width: 100%;
 }
