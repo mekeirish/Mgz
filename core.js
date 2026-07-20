@@ -9,7 +9,7 @@ const State = {
   currentUploadedImageUrl: null,
   uploadTarget: null,
   isVendorAuthenticated: false,
-  vendorTab: 'products' // 'products' ou 'orders'
+  vendorTab: 'products'
 };
 
 const Core = {
@@ -124,16 +124,14 @@ const Core = {
       console.warn('Notifications refusées.');
       return;
     }
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      console.log('Notifications autorisées.');
-      // Enregistrer le token FCM
-      try {
-        const token = await messaging.getToken({ vapidKey: 'VOTRE_CLE_VAPID' });
-        await DB.saveVendorToken(token);
-      } catch (err) {
-        console.error('Erreur FCM :', err);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        console.log('✅ Notifications autorisées.');
+        // Le token est déjà enregistré dans firebase.js
       }
+    } catch (err) {
+      console.error('Erreur demande notification :', err);
     }
   },
 
@@ -146,7 +144,6 @@ const Core = {
     }
 
     if (State.role === 'vendor') {
-      // Charger les commandes
       DB.getOrders().then(orders => {
         UI.renderVendorView(State.categories, State.products, orders);
       }).catch(err => {
@@ -187,20 +184,29 @@ const Core = {
 
   // --- COMMANDE ---
   async handleCheckout() {
-    if (State.cart.length === 0) return;
+    if (State.cart.length === 0) {
+      alert('Votre panier est vide.');
+      return;
+    }
     try {
       const order = Business.createOrder(State.cart);
       await DB.addOrder(order);
+      
       // Vider le panier
       State.cart = [];
       UI.updateCartCount(0);
       UI.toggleCartModal(false);
-      // Notifier le vendeur
-      await DB.sendPushNotification('Nouvelle commande', `Commande #${order.id.slice(0,6)} - Total ${Business.formatPrice(order.total)}`);
-      alert('Commande envoyée avec succès !');
+      
+      // 🔔 Envoyer la notification push au vendeur
+      await DB.sendPushNotification(
+        '🛍️ Nouvelle commande !',
+        `Commande #${order.id.slice(0,6)} - Total ${Business.formatPrice(order.total)}`
+      );
+      
+      alert('✅ Commande envoyée avec succès !');
     } catch (err) {
       console.error(err);
-      alert('Erreur lors de la commande.');
+      alert('❌ Erreur lors de la commande.');
     }
   },
 
@@ -212,18 +218,137 @@ const Core = {
 
   async updateOrderStatus(orderId) {
     try {
-      const orders = await DB.getOrders();
-      const order = orders.find(o => o.id === orderId);
-      if (!order) return;
-      order.status = 'livré';
       await DB.updateOrder(orderId, { status: 'livré' });
       this.renderCurrentState();
     } catch (err) {
       console.error(err);
+      alert('Erreur lors de la mise à jour.');
     }
   },
 
-  // ... (les autres fonctions : handleAddCategory, handleAddProduct, etc. inchangées)
+  // --- ACTIONS VENDEUR : AJOUT ---
+  async handleAddCategory() {
+    const name = UI.getInputValue('cat-name');
+    const imageUrl = State.currentUploadedImageUrl || null;
+    try {
+      const newCategory = Business.createCategory(name, imageUrl);
+      await DB.addCategory(newCategory);
+      State.currentUploadedImageUrl = null;
+      await this.loadData();
+      this.renderCurrentState();
+    } catch (e) {
+      console.error(e.message);
+      UI.showError('Erreur lors de l\'ajout : ' + e.message);
+    }
+  },
+
+  async handleAddProduct() {
+    const catId = UI.getInputValueWithoutReset('prod-cat');
+    const name = UI.getInputValue('prod-name');
+    const price = UI.getInputValue('prod-price');
+    const imageUrl = State.currentUploadedImageUrl || null;
+    try {
+      const newProduct = Business.createProduct(name, price, catId, imageUrl);
+      await DB.addProduct(newProduct);
+      State.currentUploadedImageUrl = null;
+      await this.loadData();
+      this.renderCurrentState();
+    } catch (e) {
+      console.error(e.message);
+      UI.showError('Erreur lors de l\'ajout : ' + e.message);
+    }
+  },
+
+  // --- ACTIONS VENDEUR : MODIFICATION ---
+  async startEditCategory(id) {
+    const cat = await DB.getCategoryById(id);
+    if (!cat) return;
+    State.currentEdit = { type: 'category', id, data: { ...cat } };
+    State.currentUploadedImageUrl = null;
+    this.renderCurrentState();
+  },
+
+  async startEditProduct(id) {
+    const prod = await DB.getProductById(id);
+    if (!prod) return;
+    State.currentEdit = { type: 'product', id, data: { ...prod } };
+    State.currentUploadedImageUrl = null;
+    this.renderCurrentState();
+  },
+
+  cancelEdit() {
+    State.currentEdit = null;
+    State.currentUploadedImageUrl = null;
+    this.renderCurrentState();
+  },
+
+  async submitEditCategory() {
+    const name = UI.getInputValueWithoutReset('cat-name');
+    const imageUrl = State.currentUploadedImageUrl || null;
+    try {
+      const validated = Business.validateCategoryUpdate(name, imageUrl);
+      await DB.updateCategory(State.currentEdit.id, validated);
+      State.currentEdit = null;
+      State.currentUploadedImageUrl = null;
+      await this.loadData();
+      this.renderCurrentState();
+    } catch (e) {
+      console.error(e.message);
+      UI.showError('Erreur lors de la mise à jour : ' + e.message);
+    }
+  },
+
+  async submitEditProduct() {
+    const catId = UI.getInputValueWithoutReset('prod-cat');
+    const name = UI.getInputValueWithoutReset('prod-name');
+    const price = UI.getInputValueWithoutReset('prod-price');
+    const imageUrl = State.currentUploadedImageUrl || null;
+    try {
+      const validated = Business.validateProductUpdate(name, price, catId, imageUrl);
+      await DB.updateProduct(State.currentEdit.id, validated);
+      State.currentEdit = null;
+      State.currentUploadedImageUrl = null;
+      await this.loadData();
+      this.renderCurrentState();
+    } catch (e) {
+      console.error(e.message);
+      UI.showError('Erreur lors de la mise à jour : ' + e.message);
+    }
+  },
+
+  // --- CLOUDINARY ---
+  openCloudinaryWidget(target) {
+    State.uploadTarget = target;
+    if (!window.cloudinary) {
+      alert('Cloudinary widget non chargé.');
+      return;
+    }
+    const widget = cloudinary.openUploadWidget(
+      {
+        cloudName: 'h91be5lz',
+        uploadPreset: 'mgzcloud1',
+        sources: ['local', 'url', 'camera'],
+        multiple: false,
+        cropping: true,
+        folder: 'lassoshop',
+        resourceType: 'image',
+        clientAllowedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+        maxFileSize: 5000000
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Erreur Cloudinary :', error);
+          return;
+        }
+        if (result && result.event === 'success') {
+          const imageUrl = result.info.secure_url;
+          State.currentUploadedImageUrl = imageUrl;
+          UI.updateImagePreview(imageUrl);
+        }
+      }
+    );
+    widget.open();
+  }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
