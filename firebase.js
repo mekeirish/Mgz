@@ -1,3 +1,4 @@
+// Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAgqoYuUbyVNjwACPXoZcBfFMaeBk0udoY",
   authDomain: "mgz-project-e8de4.firebaseapp.com",
@@ -8,9 +9,11 @@ const firebaseConfig = {
   appId: "1:344833610568:web:7c4ad4f8e60acd79d5197d"
 };
 
+// Initialisation
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// Objet DB exposé globalement
 const DB = {
   async getCategories() {
     const snapshot = await db.collection('categories').get();
@@ -43,5 +46,20 @@ const DB = {
   async updateProduct(id, data) {
     await db.collection('products').doc(id).update(data);
     return this.getProductById(id);
+  },
+  // Pour les commandes
+  async addOrder(order) {
+    await db.collection('orders').doc(order.id).set(order);
+    return order;
+  },
+  async getOrders() {
+    const snapshot = await db.collection('orders').get();
+    return snapshot.docs.map(doc => doc.data());
+  },
+  async updateOrder(id, data) {
+    await db.collection('orders').doc(id).update(data);
   }
 };
+
+// Assurer que DB est disponible globalement (déjà via var, mais on le met dans window)
+window.DB = DB;
