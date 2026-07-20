@@ -4,17 +4,8 @@ const UI = {
   cartModal: document.getElementById('cart-modal'),
   cartContent: document.getElementById('cart-content'),
   checkoutBtn: document.getElementById('btn-checkout'),
-
-  showError(message) {
-    this.container.innerHTML = `
-      <div class="text-center py-10">
-        <p class="text-red-500 text-lg font-semibold">⚠️ Erreur</p>
-        <p class="opacity-80 mt-2">${message}</p>
-        <button class="glass-btn px-5 py-2 mt-4 text-sm" onclick="location.reload()">Réessayer</button>
-      </div>
-    `;
-    this.cartBtn.classList.add('hidden');
-  },
+  loginModal: document.getElementById('vendor-login-modal'),
+  loginError: document.getElementById('login-error'),
 
   renderCategories(categories) {
     if (!categories || categories.length === 0) {
@@ -80,23 +71,57 @@ const UI = {
     this.container.innerHTML = html;
   },
 
-  renderVendorView(categories, products) {
+  renderVendorView(categories, products, orders = []) {
     this.cartBtn.classList.add('hidden');
 
-    let html = `
+    const tabs = `
+      <div class="flex gap-2 mb-6">
+        <button onclick="Core.switchVendorTab('products')" 
+                class="glass-btn px-4 py-2 text-sm font-medium ${State.vendorTab === 'products' ? 'bg-white/30' : ''}">
+          📦 Produits
+        </button>
+        <button onclick="Core.switchVendorTab('orders')" 
+                class="glass-btn px-4 py-2 text-sm font-medium ${State.vendorTab === 'orders' ? 'bg-white/30' : ''}">
+          📋 Commandes ${orders.filter(o => o.status !== 'livré').length > 0 ? '(' + orders.filter(o => o.status !== 'livré').length + ')' : ''}
+        </button>
+      </div>
+    `;
+
+    let content = '';
+    if (State.vendorTab === 'products') {
+      content = this._renderProductsTab(categories, products);
+    } else {
+      content = this._renderOrdersTab(orders);
+    }
+
+    this.container.innerHTML = `
       <h2 class="text-2xl font-bold mb-5">Espace Vendeur</h2>
-      <button onclick="Core.switchToClient()" class="glass-btn mb-6 px-4 py-2 text-sm">
-        ← Retour Client
-      </button>
+      ${tabs}
+      ${content}
+    `;
+  },
+
+  _renderProductsTab(categories, products) {
+    const isEditingCategory = State.currentEdit && State.currentEdit.type === 'category';
+    const catData = isEditingCategory ? State.currentEdit.data : null;
+
+    return `
       <div class="glass-panel p-6 rounded-2xl mb-6">
-        <h3 class="text-xl font-medium mb-4">Nouvelle catégorie</h3>
+        <h3 class="text-xl font-medium mb-4">${isEditingCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}</h3>
         <div class="flex flex-col gap-4">
-          <input type="text" id="cat-name" placeholder="Nom" class="glass-input w-full" />
-          <button onclick="Core.handleAddCategory()" class="glass-btn w-full py-3">Ajouter</button>
+          <input type="text" id="cat-name" placeholder="Nom" class="glass-input w-full" value="${catData ? catData.name : ''}" />
+          <button onclick="Core.openCloudinaryWidget('category')" class="glass-btn px-4 py-2 text-sm">
+            🖼️ Choisir une image
+          </button>
+          ${State.currentUploadedImageUrl ? `<img src="${State.currentUploadedImageUrl}" class="w-12 h-12 rounded-full object-cover" />` : ''}
+          <button onclick="${isEditingCategory ? 'Core.submitEditCategory()' : 'Core.handleAddCategory()'}" class="glass-btn w-full py-3">
+            ${isEditingCategory ? 'Mettre à jour' : 'Ajouter'}
+          </button>
+          ${isEditingCategory ? `<button onclick="Core.cancelEdit()" class="glass-btn w-full py-2 text-sm opacity-70">Annuler</button>` : ''}
         </div>
       </div>
-      <div class="glass-panel p-6 rounded-2xl">
-        <h3 class="text-xl font-medium mb-4">Nouveau produit</h3>
+      <div class="glass-panel p-6 rounded-2xl mb-6">
+        <h3 class="text-xl font-medium mb-4">${isEditingProduct ? 'Modifier le produit' : 'Nouveau produit'}</h3>
         <div class="flex flex-col gap-4">
           <select id="prod-cat" class="glass-input w-full">
             <option value="">Choisir une catégorie...</option>
@@ -107,8 +132,36 @@ const UI = {
           <button onclick="Core.handleAddProduct()" class="glass-btn w-full py-3">Ajouter</button>
         </div>
       </div>
+      <div class="glass-panel p-4 rounded-xl">
+        <h4 class="text-lg font-medium mb-3">Catégories existantes</h4>
+        ${categories.map(c => `
+          <div class="flex justify-between items-center py-2 border-b border-white/10">
+            <span>${c.name}</span>
+            <button onclick="Core.startEditCategory('${c.id}')" class="glass-btn px-3 py-1 text-sm">Modifier</button>
+          </div>
+        `).join('')}
+      </div>
     `;
-    this.container.innerHTML = html;
+  },
+
+  _renderOrdersTab(orders) {
+    if (!orders || orders.length === 0) {
+      return `<p class="opacity-70 text-center py-6">Aucune commande.</p>`;
+    }
+    return orders.map(order => `
+      <div class="glass-panel p-4 rounded-xl">
+        <div class="flex justify-between">
+          <div>
+            <p class="font-medium">#${order.id.slice(0,6)}</p>
+            <p class="text-sm opacity-70">${order.clientName || 'Anonyme'}</p>
+            <p class="text-sm opacity-70">${new Date(order.createdAt).toLocaleString()}</p>
+            <p class="font-medium">${Business.formatPrice(order.total)}</p>
+            <p>Statut: <span class="${order.status === 'livré' ? 'text-green-600' : 'text-orange-500'}">${order.status}</span></p>
+          </div>
+          ${order.status !== 'livré' ? `<button onclick="Core.updateOrderStatus('${order.id}')" class="glass-btn px-3 py-1 text-sm">✅ Livrer</button>` : ''}
+        </div>
+      </div>
+    `).join('');
   },
 
   renderCart(cart) {
@@ -155,10 +208,19 @@ const UI = {
     }
   },
 
-  updateCartCount(count) {
-    document.getElementById('cart-count').innerText = count;
+  // ===== MODALE DE CONNEXION =====
+  showLoginModal() {
+    this.loginModal.classList.remove('hidden');
+    this.loginModal.classList.add('flex');
+    this.loginError.classList.add('hidden');
   },
 
+  hideLoginModal() {
+    this.loginModal.classList.add('hidden');
+    this.loginModal.classList.remove('flex');
+  },
+
+  // ===== UTILITAIRES =====
   getInputValue(id) {
     const el = document.getElementById(id);
     if (!el) return '';
@@ -170,5 +232,19 @@ const UI = {
   getInputValueWithoutReset(id) {
     const el = document.getElementById(id);
     return el ? el.value : '';
+  },
+
+  updateCartCount(count) {
+    document.getElementById('cart-count').innerText = count;
+  },
+
+  updateImagePreview(imageUrl) {
+    // Simple mise à jour de l'aperçu
+    const previews = this.container.querySelectorAll('.vendor-form img, .glass-panel img');
+    if (previews.length) {
+      const img = previews[previews.length - 1];
+      img.src = imageUrl;
+      img.alt = 'Aperçu';
+    }
   }
 };
