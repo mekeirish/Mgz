@@ -1,4 +1,3 @@
-// Service Worker pour les notifications push
 const CACHE_NAME = 'lassoshop-v2';
 const ASSETS = [
   '/',
@@ -12,44 +11,35 @@ const ASSETS = [
   '/icon.png'
 ];
 
-// Installation du Service Worker
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    .then(() => self.skipWaiting())
   );
 });
 
-// Activation - nettoyer les anciens caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// Interception des requêtes
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request)
-      .then(res => res || fetch(e.request))
+    caches.match(e.request).then(res => res || fetch(e.request))
   );
 });
 
-// ===================== NOTIFICATIONS PUSH =====================
-
-// Gestion des messages push (quand l'app est fermée)
+// ===== NOTIFICATIONS PUSH =====
 self.addEventListener('push', (e) => {
   let data = { title: 'Nouvelle notification', body: 'Message reçu', icon: '/icon.png' };
   try {
     data = e.data.json();
   } catch (err) {
-    // Si le message n'est pas en JSON
     data.body = e.data.text();
   }
 
@@ -70,22 +60,17 @@ self.addEventListener('push', (e) => {
   );
 });
 
-// Gestion du clic sur la notification
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-
   if (e.action === 'close') return;
-
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Si une fenêtre est déjà ouverte, on la focus
         for (const client of clientList) {
           if (client.url === e.notification.data && 'focus' in client) {
             return client.focus();
           }
         }
-        // Sinon, on ouvre une nouvelle fenêtre
         if (clients.openWindow) {
           return clients.openWindow(e.notification.data || '/');
         }
