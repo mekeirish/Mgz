@@ -53,7 +53,17 @@ const Core = {
     const toggle = document.getElementById('role-toggle');
     toggle.addEventListener('change', (e) => {
       console.log('🔄 Toggle changé :', e.target.checked);
-      // ... code existant
+      const isChecked = e.target.checked;
+      if (isChecked) {
+        UI.showLoginModal();
+        this._pendingToggle = true;
+      } else {
+        State.isVendorAuthenticated = false;
+        State.role = 'client';
+        State.view = 'categories';
+        this.cancelEdit();
+        this.renderCurrentState();
+      }
     });
 
     // Formulaire de connexion
@@ -75,37 +85,6 @@ const Core = {
 
     document.getElementById('btn-checkout').addEventListener('click', () => {
       this.handleCheckout();
-    });
-
-    // Délégation d'événements pour le contenu dynamique
-    const container = document.getElementById('app-container');
-    container.addEventListener('click', (e) => {
-      console.log('🖱️ Clic dans container, target :', e.target);
-
-      const backBtn = e.target.closest('[data-back]');
-      if (backBtn) {
-        console.log('🔙 Retour cliqué');
-        this.showCategories();
-        return;
-      }
-
-      const catBtn = e.target.closest('[data-category-id]');
-      if (catBtn) {
-        const categoryId = catBtn.dataset.categoryId;
-        console.log('📂 Catégorie cliquée :', categoryId);
-        this.selectCategory(categoryId);
-        return;
-      }
-
-      const productBtn = e.target.closest('[data-product-id]');
-      if (productBtn) {
-        const productId = productBtn.dataset.productId;
-        console.log('🛒 Produit cliqué :', productId);
-        this.handleAddToCart(productId);
-        return;
-      }
-
-      console.log('ℹ️ Clic non géré');
     });
 
     console.log('✅ Écouteurs attachés');
@@ -179,6 +158,7 @@ const Core = {
     }
   },
 
+  // 👇 Ces fonctions sont appelées depuis les onclick dans le HTML
   selectCategory(categoryId) {
     console.log('👉 selectCategory appelé avec :', categoryId);
     State.activeCategoryId = categoryId;
@@ -194,6 +174,7 @@ const Core = {
   },
 
   handleAddToCart(productId) {
+    console.log('🛒 handleAddToCart appelé avec :', productId);
     const product = State.products.find(p => p.id === productId);
     if (product) {
       State.cart = Business.addToCart(State.cart, product);
@@ -360,6 +341,7 @@ const Core = {
   }
 };
 
+// EXPOSER GLOBALEMENT POUR LES ONCLICK
 window.Core = Core;
 
 document.addEventListener('DOMContentLoaded', () => {
