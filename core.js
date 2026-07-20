@@ -7,9 +7,7 @@ const State = {
   cart: [],
   currentEdit: null,
   currentUploadedImageUrl: null,
-  uploadTarget: null,
-  isVendorAuthenticated: false,
-  vendorTab: 'products'
+  uploadTarget: null
 };
 
 const Core = {
@@ -17,7 +15,7 @@ const Core = {
     console.log('🚀 Core.init()');
     await this.loadData();
     this.setupListeners();
-    this.renderCurrentState();
+    this.render();
   },
 
   async loadData() {
@@ -28,30 +26,16 @@ const Core = {
   },
 
   setupListeners() {
-    if (this._listenersAttached) return;
-    this._listenersAttached = true;
-
+    // Toggle Client / Vendeur
     document.getElementById('role-toggle').addEventListener('change', (e) => {
-      const isChecked = e.target.checked;
-      if (isChecked) {
-        UI.showLoginModal();
-        this._pendingToggle = true;
+      if (e.target.checked) {
+        this.switchToVendor();
       } else {
-        State.isVendorAuthenticated = false;
-        State.role = 'client';
-        State.view = 'categories';
-        this.cancelEdit();
-        this.renderCurrentState();
+        this.switchToClient();
       }
     });
 
-    UI.loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.handleVendorLogin();
-    });
-    UI.cancelLoginBtn.addEventListener('click', () => this.handleCancelLogin());
-    UI.closeLoginBtn.addEventListener('click', () => this.handleCancelLogin());
-
+    // Panier
     document.getElementById('btn-cart').addEventListener('click', () => {
       UI.renderCart(State.cart);
       UI.toggleCartModal(true);
@@ -60,76 +44,43 @@ const Core = {
       UI.toggleCartModal(false);
     });
 
+    // Bouton Commander
     document.getElementById('btn-checkout').addEventListener('click', () => {
       this.handleCheckout();
     });
   },
 
-  handleVendorLogin() {
-    const email = UI.loginEmail.value.trim();
-    const password = UI.loginPassword.value.trim();
-    if (email === 'admin@admin.com' && password === 'admin123') {
-      State.isVendorAuthenticated = true;
-      State.role = 'vendor';
-      State.vendorTab = 'products';
-      this._pendingToggle = false;
-      UI.hideLoginModal();
-      this.renderCurrentState();
-    } else {
-      UI.showLoginError('Email ou mot de passe incorrect.');
-    }
-  },
-
-  handleCancelLogin() {
-    const toggle = document.getElementById('role-toggle');
-    if (toggle.checked) toggle.checked = false;
-    this._pendingToggle = false;
-    State.role = 'client';
-    State.view = 'categories';
-    UI.hideLoginModal();
-    this.renderCurrentState();
-  },
-
-  renderCurrentState() {
-    console.log('🎨 renderCurrentState() role:', State.role, 'view:', State.view);
-    if (State.role === 'vendor' && !State.isVendorAuthenticated) {
-      State.role = 'client';
-      const toggle = document.getElementById('role-toggle');
-      if (toggle.checked) toggle.checked = false;
-    }
-
+  render() {
     if (State.role === 'vendor') {
       UI.renderVendorView(State.categories, State.products);
     } else {
       if (State.view === 'categories') {
-        UI.renderClientCategories(State.categories);
+        UI.renderCategories(State.categories);
       } else if (State.view === 'products') {
-        const category = State.categories.find(c => c.id === State.activeCategoryId);
-        if (!category) {
+        const cat = State.categories.find(c => c.id === State.activeCategoryId);
+        if (!cat) {
           this.showCategories();
           return;
         }
-        const categoryProducts = Business.getProductsByCategory(State.products, State.activeCategoryId);
-        UI.renderClientProducts(category, categoryProducts);
+        const prods = Business.getProductsByCategory(State.products, State.activeCategoryId);
+        UI.renderProducts(cat, prods);
       }
     }
   },
 
+  // Navigation client
   selectCategory(categoryId) {
-    console.log('👉 selectCategory() appelé avec:', categoryId);
     State.activeCategoryId = categoryId;
     State.view = 'products';
-    this.renderCurrentState();
+    this.render();
   },
 
   showCategories() {
-    console.log('🏠 showCategories()');
     State.view = 'categories';
-    this.renderCurrentState();
+    this.render();
   },
 
-  handleAddToCart(productId) {
-    console.log('🛒 handleAddToCart() appelé avec:', productId);
+  addToCart(productId) {
     const product = State.products.find(p => p.id === productId);
     if (product) {
       State.cart = Business.addToCart(State.cart, product);
@@ -137,9 +88,10 @@ const Core = {
     }
   },
 
+  // Commande
   async handleCheckout() {
     if (State.cart.length === 0) {
-      alert('Votre panier est vide.');
+      alert('Panier vide.');
       return;
     }
     try {
@@ -148,32 +100,30 @@ const Core = {
       State.cart = [];
       UI.updateCartCount(0);
       UI.toggleCartModal(false);
-      await DB.sendPushNotification(
-        '🛍️ Nouvelle commande !',
-        `Commande #${order.id.slice(0,6)} - Total ${Business.formatPrice(order.total)}`
-      );
       alert('✅ Commande envoyée !');
     } catch (err) {
       console.error(err);
-      alert('❌ Erreur lors de la commande.');
+      alert('❌ Erreur.');
     }
   },
 
-  switchVendorTab(tab) {
-    State.vendorTab = tab;
-    this.renderCurrentState();
+  // Basculer rôles
+  switchToVendor() {
+    State.role = 'vendor';
+    State.view = 'categories';
+    this.render();
   },
 
-  async updateOrderStatus(orderId) {
-    try {
-      await DB.updateOrder(orderId, { status: 'livré' });
-      this.renderCurrentState();
-    } catch (err) {
-      console.error(err);
-    }
+  switchToClient() {
+    State.role = 'client';
+    State.view = 'categories';
+    this.render();
+    // Remettre le toggle en position client
+    const toggle = document.getElementById('role-toggle');
+    if (toggle.checked) toggle.checked = false;
   },
 
-  // --- Autres fonctions existantes (inchangées) ---
+  // Actions Vendeur
   async handleAddCategory() {
     const name = UI.getInputValue('cat-name');
     const imageUrl = State.currentUploadedImageUrl || null;
@@ -182,10 +132,10 @@ const Core = {
       await DB.addCategory(newCategory);
       State.currentUploadedImageUrl = null;
       await this.loadData();
-      this.renderCurrentState();
+      this.render();
     } catch (e) {
       console.error(e.message);
-      UI.showError('Erreur : ' + e.message);
+      alert(e.message);
     }
   },
 
@@ -199,73 +149,18 @@ const Core = {
       await DB.addProduct(newProduct);
       State.currentUploadedImageUrl = null;
       await this.loadData();
-      this.renderCurrentState();
+      this.render();
     } catch (e) {
       console.error(e.message);
-      UI.showError('Erreur : ' + e.message);
+      alert(e.message);
     }
   },
 
-  async startEditCategory(id) {
-    const cat = await DB.getCategoryById(id);
-    if (!cat) return;
-    State.currentEdit = { type: 'category', id, data: { ...cat } };
-    State.currentUploadedImageUrl = null;
-    this.renderCurrentState();
-  },
-
-  async startEditProduct(id) {
-    const prod = await DB.getProductById(id);
-    if (!prod) return;
-    State.currentEdit = { type: 'product', id, data: { ...prod } };
-    State.currentUploadedImageUrl = null;
-    this.renderCurrentState();
-  },
-
-  cancelEdit() {
-    State.currentEdit = null;
-    State.currentUploadedImageUrl = null;
-    this.renderCurrentState();
-  },
-
-  async submitEditCategory() {
-    const name = UI.getInputValueWithoutReset('cat-name');
-    const imageUrl = State.currentUploadedImageUrl || null;
-    try {
-      const validated = Business.validateCategoryUpdate(name, imageUrl);
-      await DB.updateCategory(State.currentEdit.id, validated);
-      State.currentEdit = null;
-      State.currentUploadedImageUrl = null;
-      await this.loadData();
-      this.renderCurrentState();
-    } catch (e) {
-      console.error(e.message);
-      UI.showError('Erreur : ' + e.message);
-    }
-  },
-
-  async submitEditProduct() {
-    const catId = UI.getInputValueWithoutReset('prod-cat');
-    const name = UI.getInputValueWithoutReset('prod-name');
-    const price = UI.getInputValueWithoutReset('prod-price');
-    const imageUrl = State.currentUploadedImageUrl || null;
-    try {
-      const validated = Business.validateProductUpdate(name, price, catId, imageUrl);
-      await DB.updateProduct(State.currentEdit.id, validated);
-      State.currentEdit = null;
-      State.currentUploadedImageUrl = null;
-      await this.loadData();
-      this.renderCurrentState();
-    } catch (e) {
-      console.error(e.message);
-      UI.showError('Erreur : ' + e.message);
-    }
-  },
-
+  // Cloudinary (pour l'upload d'images)
   openCloudinaryWidget(target) {
     State.uploadTarget = target;
     if (!window.cloudinary) {
-      alert('Cloudinary widget non chargé.');
+      alert('Cloudinary non chargé.');
       return;
     }
     const widget = cloudinary.openUploadWidget(
@@ -282,12 +177,13 @@ const Core = {
       },
       (error, result) => {
         if (error) {
-          console.error('Erreur Cloudinary :', error);
+          console.error('Cloudinary error:', error);
           return;
         }
         if (result && result.event === 'success') {
           const imageUrl = result.info.secure_url;
           State.currentUploadedImageUrl = imageUrl;
+          // Mettre à jour l'aperçu (optionnel)
           UI.updateImagePreview(imageUrl);
         }
       }
@@ -296,8 +192,10 @@ const Core = {
   }
 };
 
+// Exposer globalement
 window.Core = Core;
 
+// Démarrage
 document.addEventListener('DOMContentLoaded', () => {
   Core.init();
 });
