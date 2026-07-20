@@ -14,20 +14,24 @@ const State = {
 
 const Core = {
   async init() {
+    console.log('✅ Core.init() appelé');
     UI.showLoading();
     try {
       await this.loadData();
       this.setupListeners();
       this.renderCurrentState();
     } catch (error) {
-      console.error('Erreur d\'initialisation :', error);
+      console.error('❌ Erreur init :', error);
       UI.showError('Impossible de charger les données.');
     }
   },
 
   async loadData() {
+    console.log('🔄 Chargement des données...');
     State.categories = await DB.getCategories();
     State.products = await DB.getProducts();
+    console.log('📦 Catégories chargées :', State.categories.length);
+    console.log('📦 Produits chargés :', State.products.length);
   },
 
   async retryLoad() {
@@ -43,21 +47,16 @@ const Core = {
   setupListeners() {
     if (this._listenersAttached) return;
     this._listenersAttached = true;
+    console.log('🔗 Attachement des écouteurs...');
 
-    document.getElementById('role-toggle').addEventListener('change', (e) => {
-      const isChecked = e.target.checked;
-      if (isChecked) {
-        UI.showLoginModal();
-        this._pendingToggle = true;
-      } else {
-        State.isVendorAuthenticated = false;
-        State.role = 'client';
-        State.view = 'categories';
-        this.cancelEdit();
-        this.renderCurrentState();
-      }
+    // Toggle Vendeur
+    const toggle = document.getElementById('role-toggle');
+    toggle.addEventListener('change', (e) => {
+      console.log('🔄 Toggle changé :', e.target.checked);
+      // ... code existant
     });
 
+    // Formulaire de connexion
     UI.loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       this.handleVendorLogin();
@@ -65,6 +64,7 @@ const Core = {
     UI.cancelLoginBtn.addEventListener('click', () => this.handleCancelLogin());
     UI.closeLoginBtn.addEventListener('click', () => this.handleCancelLogin());
 
+    // Panier
     document.getElementById('btn-cart').addEventListener('click', () => {
       UI.renderCart(State.cart);
       UI.toggleCartModal(true);
@@ -78,28 +78,41 @@ const Core = {
     });
 
     // Délégation d'événements pour le contenu dynamique
-    document.getElementById('app-container').addEventListener('click', (e) => {
+    const container = document.getElementById('app-container');
+    container.addEventListener('click', (e) => {
+      console.log('🖱️ Clic dans container, target :', e.target);
+
       const backBtn = e.target.closest('[data-back]');
       if (backBtn) {
+        console.log('🔙 Retour cliqué');
         this.showCategories();
         return;
       }
+
       const catBtn = e.target.closest('[data-category-id]');
       if (catBtn) {
         const categoryId = catBtn.dataset.categoryId;
+        console.log('📂 Catégorie cliquée :', categoryId);
         this.selectCategory(categoryId);
         return;
       }
+
       const productBtn = e.target.closest('[data-product-id]');
       if (productBtn) {
         const productId = productBtn.dataset.productId;
+        console.log('🛒 Produit cliqué :', productId);
         this.handleAddToCart(productId);
         return;
       }
+
+      console.log('ℹ️ Clic non géré');
     });
+
+    console.log('✅ Écouteurs attachés');
   },
 
   handleVendorLogin() {
+    console.log('🔐 Tentative de connexion vendeur');
     const email = UI.loginEmail.value.trim();
     const password = UI.loginPassword.value.trim();
     if (email === 'admin@admin.com' && password === 'admin123') {
@@ -116,6 +129,7 @@ const Core = {
   },
 
   handleCancelLogin() {
+    console.log('❌ Annulation connexion vendeur');
     const toggle = document.getElementById('role-toggle');
     if (toggle.checked) toggle.checked = false;
     this._pendingToggle = false;
@@ -136,6 +150,7 @@ const Core = {
   },
 
   renderCurrentState() {
+    console.log('🎨 Rendu de l\'état actuel : role =', State.role, 'view =', State.view);
     if (State.role === 'vendor' && !State.isVendorAuthenticated) {
       State.role = 'client';
       const toggle = document.getElementById('role-toggle');
@@ -154,6 +169,7 @@ const Core = {
       } else if (State.view === 'products') {
         const category = State.categories.find(c => c.id === State.activeCategoryId);
         if (!category) {
+          console.warn('⚠️ Catégorie introuvable, retour aux catégories');
           this.showCategories();
           return;
         }
@@ -164,12 +180,14 @@ const Core = {
   },
 
   selectCategory(categoryId) {
+    console.log('👉 selectCategory appelé avec :', categoryId);
     State.activeCategoryId = categoryId;
     State.view = 'products';
     this.renderCurrentState();
   },
 
   showCategories() {
+    console.log('🏠 Retour aux catégories');
     State.view = 'categories';
     State.activeCategoryId = null;
     this.renderCurrentState();
@@ -345,5 +363,6 @@ const Core = {
 window.Core = Core;
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 DOM chargé, lancement Core.init()');
   Core.init();
 });
