@@ -8,41 +8,15 @@ const State = {
   cart: [],
   currentEdit: null,
   currentUploadedImageUrl: null,
-  uploadTarget: null,
-  user: null
+  uploadTarget: null
 };
 
 const Core = {
   async init() {
-    // Attacher l'écouteur d'authentification
-    DB.onAuthStateChanged(async (user) => {
-      if (user) {
-        const userData = Business.processFacebookUser(user); // on peut renommer plus tard, mais la fonction fonctionne aussi pour Google
-        State.user = userData;
-        await this.loadData();
-        UI.showApp(userData);
-        this.renderCurrentState();
-        this.setupListeners();
-      } else {
-        State.user = null;
-        UI.showLoginScreen();
-        document.getElementById('user-avatar').classList.add('hidden');
-        document.getElementById('user-name').classList.add('hidden');
-        document.getElementById('btn-logout').classList.add('hidden');
-        State.cart = [];
-        UI.updateCartCount(0);
-      }
-    });
-
-    // Bouton de connexion Google
-    document.getElementById('btn-login-google').addEventListener('click', () => {
-      this.handleLogin();
-    });
-
-    // Bouton de déconnexion
-    document.getElementById('btn-logout').addEventListener('click', () => {
-      this.handleLogout();
-    });
+    // Charger les données au démarrage
+    await this.loadData();
+    this.setupListeners();
+    this.renderCurrentState();
   },
 
   async loadData() {
@@ -54,6 +28,7 @@ const Core = {
     if (this._listenersAttached) return;
     this._listenersAttached = true;
 
+    // Toggle rôle
     document.getElementById('role-toggle').addEventListener('change', (e) => {
       State.role = e.target.checked ? 'vendor' : 'client';
       State.view = 'categories';
@@ -61,18 +36,17 @@ const Core = {
       this.renderCurrentState();
     });
 
+    // Panier
     document.getElementById('btn-cart').addEventListener('click', () => {
       UI.renderCart(State.cart);
       UI.toggleCartModal(true);
     });
-
     document.getElementById('close-cart').addEventListener('click', () => {
       UI.toggleCartModal(false);
     });
   },
 
   renderCurrentState() {
-    if (!State.user) return;
     if (State.role === 'vendor') {
       UI.renderVendorView(State.categories, State.products);
     } else {
@@ -229,28 +203,10 @@ const Core = {
       }
     );
     widget.open();
-  },
-
-  // --- AUTHENTIFICATION (Google) ---
-  async handleLogin() {
-    try {
-      await DB.loginWithGoogle();
-    } catch (error) {
-      console.error('Erreur lors de la connexion :', error);
-      alert('Impossible de se connecter avec Google. Veuillez réessayer.');
-    }
-  },
-
-  async handleLogout() {
-    try {
-      await DB.logout();
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion :', error);
-    }
   }
 };
 
-// Démarrage de l'application
+// Démarrage
 document.addEventListener('DOMContentLoaded', () => {
   Core.init();
 });
