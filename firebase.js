@@ -1,5 +1,4 @@
 // Responsable UNIQUEMENT des accès aux données et de l'authentification.
-// Configuration Firebase réelle
 const firebaseConfig = {
   apiKey: "AIzaSyAgqoYuUbyVNjwACPXoZcBfFMaeBk0udoY",
   authDomain: "mgz-project-e8de4.firebaseapp.com",
@@ -10,17 +9,16 @@ const firebaseConfig = {
   appId: "1:344833610568:web:7c4ad4f8e60acd79d5197d"
 };
 
-// Initialisation de Firebase
 firebase.initializeApp(firebaseConfig);
 
-// Références aux services
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Fournisseur Facebook
-const provider = new firebase.auth.FacebookAuthProvider();
+// Fournisseur Google
+const provider = new firebase.auth.GoogleAuthProvider();
+// Demander les permissions email et profil
 provider.addScope('email');
-provider.addScope('public_profile');
+provider.addScope('profile');
 
 // =====================================================
 //                     BASE DE DONNÉES
@@ -49,7 +47,6 @@ const DB = {
 
   // --- Création ---
   async addCategory(category) {
-    // category doit contenir un champ 'id' généré par Business.generateId()
     await db.collection('categories').doc(category.id).set(category);
     return category;
   },
@@ -71,14 +68,14 @@ const DB = {
   },
 
   // =====================================================
-  //                     AUTHENTIFICATION
+  //                     AUTHENTIFICATION (Google)
   // =====================================================
-  async loginWithFacebook() {
+  async loginWithGoogle() {
     try {
       const result = await auth.signInWithPopup(provider);
       return result.user;
     } catch (error) {
-      console.error('Erreur connexion Facebook :', error);
+      console.error('Erreur connexion Google :', error);
       throw error;
     }
   },
