@@ -12,6 +12,14 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+  <!-- Enregistrement du service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker enregistré ✓'))
+        .catch(err => console.error('Erreur SW :', err));
+    }
+  </script>
 </head>
 <body class="bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200 min-h-screen text-gray-800 font-sans antialiased overflow-x-hidden leading-relaxed">
 
@@ -47,7 +55,6 @@
         <span class="font-medium text-lg">Total :</span>
         <span id="cart-total" class="font-bold text-xl">0.00 €</span>
       </div>
-      <!-- Bouton Commander -->
       <button id="btn-checkout" class="glass-btn w-full py-3 text-lg font-medium mt-2 hidden">
         🛍️ Commander
       </button>
