@@ -8,8 +8,10 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 </head>
 <body class="bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200 min-h-screen text-gray-800 font-sans antialiased overflow-x-hidden leading-relaxed">
 
@@ -28,7 +30,7 @@
         <span class="text-base font-medium">Vendeur</span>
       </label>
       <button id="btn-cart" class="glass-btn px-5 py-3 rounded-xl font-medium text-base hidden">
-        Panier (<span id="cart-count">0</span>)
+        🛒 <span id="cart-count">0</span>
       </button>
     </div>
   </header>
@@ -45,6 +47,10 @@
         <span class="font-medium text-lg">Total :</span>
         <span id="cart-total" class="font-bold text-xl">0.00 €</span>
       </div>
+      <!-- Bouton Commander -->
+      <button id="btn-checkout" class="glass-btn w-full py-3 text-lg font-medium mt-2 hidden">
+        🛍️ Commander
+      </button>
     </div>
   </div>
 
