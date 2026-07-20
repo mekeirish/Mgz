@@ -8,22 +8,6 @@ const Business = {
     return parseFloat(price).toFixed(2) + ' €';
   },
 
-  // --- Traitement des données utilisateur (fonctionne aussi pour Google) ---
-  processFacebookUser(user) {
-    if (!user) return null;
-    const name = user.displayName || 'Utilisateur';
-    const email = user.email || '';
-    const photoURL = user.photoURL || 'https://via.placeholder.com/150';
-    const role = 'client';
-    return {
-      uid: user.uid,
-      name,
-      email,
-      avatar: photoURL,
-      role
-    };
-  },
-
   // --- Création avec image ---
   createCategory(name, imageUrl = null) {
     if (!name || !name.trim()) throw new Error('Le nom de la catégorie est requis.');
