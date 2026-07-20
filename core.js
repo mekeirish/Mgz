@@ -1,3 +1,4 @@
+// État global
 const State = {
   role: 'client',
   view: 'categories',
@@ -13,16 +14,27 @@ const State = {
 const Core = {
   async init() {
     console.log('🚀 Core.init()');
+    // Vérifier que DB est chargé
+    if (typeof DB === 'undefined') {
+      console.error('❌ DB non défini. Vérifiez firebase.js.');
+      UI.showError('Erreur de connexion à la base de données.');
+      return;
+    }
     await this.loadData();
     this.setupListeners();
     this.render();
   },
 
   async loadData() {
-    State.categories = await DB.getCategories();
-    State.products = await DB.getProducts();
-    console.log('📦 Catégories:', State.categories.length);
-    console.log('📦 Produits:', State.products.length);
+    try {
+      State.categories = await DB.getCategories();
+      State.products = await DB.getProducts();
+      console.log('📦 Catégories:', State.categories.length);
+      console.log('📦 Produits:', State.products.length);
+    } catch (err) {
+      console.error('Erreur chargement données :', err);
+      UI.showError('Impossible de charger les données.');
+    }
   },
 
   setupListeners() {
@@ -118,7 +130,6 @@ const Core = {
     State.role = 'client';
     State.view = 'categories';
     this.render();
-    // Remettre le toggle en position client
     const toggle = document.getElementById('role-toggle');
     if (toggle.checked) toggle.checked = false;
   },
@@ -156,7 +167,7 @@ const Core = {
     }
   },
 
-  // Cloudinary (pour l'upload d'images)
+  // Cloudinary
   openCloudinaryWidget(target) {
     State.uploadTarget = target;
     if (!window.cloudinary) {
@@ -184,7 +195,11 @@ const Core = {
           const imageUrl = result.info.secure_url;
           State.currentUploadedImageUrl = imageUrl;
           // Mettre à jour l'aperçu (optionnel)
-          UI.updateImagePreview(imageUrl);
+          const previews = document.querySelectorAll('.vendor-form img');
+          if (previews.length) {
+            const img = previews[previews.length - 1];
+            img.src = imageUrl;
+          }
         }
       }
     );
