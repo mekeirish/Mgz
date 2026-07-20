@@ -29,7 +29,6 @@ const Business = {
     };
   },
 
-  // ✅ Cette fonction manquait
   getProductsByCategory(products, categoryId) {
     return products.filter(p => p.categoryId === categoryId);
   },
@@ -65,7 +64,6 @@ const Business = {
     };
   },
 
-  // Fonction pour créer une commande
   createOrder(cart, clientName = 'Client') {
     if (!cart || cart.length === 0) throw new Error('Panier vide.');
     const total = this.calculateCartTotal(cart);
