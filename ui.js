@@ -1,19 +1,15 @@
-// ============================================
-// UI - Version simplifiée
-// ============================================
 const UI = {
   container: document.getElementById('app-container'),
   cartBtn: document.getElementById('btn-cart'),
+  cartModal: document.getElementById('cart-modal'),
+  cartContent: document.getElementById('cart-content'),
+  checkoutBtn: document.getElementById('btn-checkout'),
 
   renderCategories(categories) {
-    console.log('📋 renderCategories()');
     if (!categories || categories.length === 0) {
       this.container.innerHTML = `
         <div class="text-center py-10">
-          <p class="text-xl opacity-70">Aucune catégorie.</p>
-          <button onclick="Core.switchToVendor()" class="glass-btn mt-4 px-6 py-3">
-            🔄 Mode Vendeur
-          </button>
+          <p class="text-xl opacity-70">Aucune catégorie disponible.</p>
         </div>
       `;
       this.cartBtn.classList.add('hidden');
@@ -23,7 +19,7 @@ const UI = {
     let html = `<h2 class="text-2xl font-bold mb-4">Catégories</h2><div class="flex flex-col gap-6">`;
     for (const cat of categories) {
       html += `
-        <button onclick="Core.selectCategory('${cat.id}')" 
+        <button onclick="Core.selectCategory('${cat.id}')"
                 class="glass-panel p-6 rounded-2xl text-left text-xl font-medium hover:bg-white/30 flex items-center gap-4 w-full">
           <img src="${cat.imageUrl}" class="w-12 h-12 rounded-full object-cover border border-white/30" />
           <span>${cat.name}</span>
@@ -36,7 +32,6 @@ const UI = {
   },
 
   renderProducts(category, products) {
-    console.log('📋 renderProducts() pour:', category?.name);
     if (!category) {
       Core.showCategories();
       return;
@@ -76,6 +71,7 @@ const UI = {
 
   renderVendorView(categories, products) {
     this.cartBtn.classList.add('hidden');
+
     let html = `
       <h2 class="text-2xl font-bold mb-5">Espace Vendeur</h2>
       <button onclick="Core.switchToClient()" class="glass-btn mb-6 px-4 py-2 text-sm">
@@ -104,11 +100,55 @@ const UI = {
     this.container.innerHTML = html;
   },
 
+  renderCart(cart) {
+    const itemsContainer = document.getElementById('cart-items');
+    itemsContainer.innerHTML = cart.length === 0
+      ? '<p class="opacity-70 text-center text-lg mt-6">Panier vide</p>'
+      : cart.map(item => `
+          <div class="glass-panel cart-item rounded-xl flex justify-between items-center p-4">
+            <div class="flex items-center gap-3">
+              <img src="${item.imageUrl}" class="w-10 h-10 rounded-full object-cover border border-white/30" />
+              <div>
+                <div class="font-medium">${item.name}</div>
+                <div class="text-sm opacity-70">Qté : ${item.quantity}</div>
+              </div>
+            </div>
+            <span>${Business.formatPrice(item.price * item.quantity)}</span>
+          </div>
+        `).join('');
+    document.getElementById('cart-total').innerText = Business.formatPrice(
+      Business.calculateCartTotal(cart)
+    );
+
+    const checkoutBtn = document.getElementById('btn-checkout');
+    if (cart.length > 0) {
+      checkoutBtn.classList.remove('hidden');
+    } else {
+      checkoutBtn.classList.add('hidden');
+    }
+  },
+
+  toggleCartModal(show) {
+    if (show) {
+      this.cartModal.classList.remove('hidden');
+      this.cartModal.classList.add('flex');
+      requestAnimationFrame(() => {
+        this.cartContent.classList.remove('translate-y-full');
+      });
+    } else {
+      this.cartContent.classList.add('translate-y-full');
+      setTimeout(() => {
+        this.cartModal.classList.add('hidden');
+        this.cartModal.classList.remove('flex');
+      }, 300);
+    }
+  },
+
   updateCartCount(count) {
     document.getElementById('cart-count').innerText = count;
   },
 
-  // Fonctions utilitaires pour le vendeur (à compléter si besoin)
+  // Utilitaires
   getInputValue(id) {
     const el = document.getElementById(id);
     if (!el) return '';
