@@ -5,6 +5,17 @@ const UI = {
   cartContent: document.getElementById('cart-content'),
   checkoutBtn: document.getElementById('btn-checkout'),
 
+  showError(message) {
+    this.container.innerHTML = `
+      <div class="text-center py-10">
+        <p class="text-red-500 text-lg font-semibold">⚠️ Erreur</p>
+        <p class="opacity-80 mt-2">${message}</p>
+        <button class="glass-btn px-5 py-2 mt-4 text-sm" onclick="location.reload()">Réessayer</button>
+      </div>
+    `;
+    this.cartBtn.classList.add('hidden');
+  },
+
   renderCategories(categories) {
     if (!categories || categories.length === 0) {
       this.container.innerHTML = `
@@ -148,7 +159,6 @@ const UI = {
     document.getElementById('cart-count').innerText = count;
   },
 
-  // Utilitaires
   getInputValue(id) {
     const el = document.getElementById(id);
     if (!el) return '';
