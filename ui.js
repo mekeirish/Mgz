@@ -7,6 +7,19 @@ const UI = {
 
   // --- VUE CLIENT ---
   renderClientCategories(categories) {
+    if (!categories || categories.length === 0) {
+      this.container.innerHTML = `
+        <div class="text-center py-10">
+          <p class="text-xl opacity-70 mb-6">Aucune catégorie disponible.</p>
+          <p class="text-md opacity-60 mb-6">Passez en mode Vendeur pour créer vos premières catégories et produits.</p>
+          <button onclick="Core.switchToVendor()" class="glass-btn px-6 py-3 text-lg font-medium">
+            🔄 Passer en mode Vendeur
+          </button>
+        </div>
+      `;
+      this.cartBtn.classList.add('hidden');
+      return;
+    }
     this.container.innerHTML = `
       <h2 class="text-2xl font-bold mb-4">Catégories</h2>
       <div class="flex flex-col gap-6">
