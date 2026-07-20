@@ -1,4 +1,4 @@
-// Responsable UNIQUEMENT des accès aux données et de l'authentification.
+// Responsable UNIQUEMENT des accès aux données (Firestore).
 const firebaseConfig = {
   apiKey: "AIzaSyAgqoYuUbyVNjwACPXoZcBfFMaeBk0udoY",
   authDomain: "mgz-project-e8de4.firebaseapp.com",
@@ -10,19 +10,8 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Fournisseur Google
-const provider = new firebase.auth.GoogleAuthProvider();
-// Demander les permissions email et profil
-provider.addScope('email');
-provider.addScope('profile');
-
-// =====================================================
-//                     BASE DE DONNÉES
-// =====================================================
 const DB = {
   // --- Lecture ---
   async getCategories() {
@@ -65,30 +54,5 @@ const DB = {
   async updateProduct(id, data) {
     await db.collection('products').doc(id).update(data);
     return this.getProductById(id);
-  },
-
-  // =====================================================
-  //                     AUTHENTIFICATION (Google)
-  // =====================================================
-  async loginWithGoogle() {
-    try {
-      const result = await auth.signInWithPopup(provider);
-      return result.user;
-    } catch (error) {
-      console.error('Erreur connexion Google :', error);
-      throw error;
-    }
-  },
-
-  async logout() {
-    await auth.signOut();
-  },
-
-  onAuthStateChanged(callback) {
-    return auth.onAuthStateChanged(callback);
-  },
-
-  getCurrentUser() {
-    return auth.currentUser;
   }
 };
