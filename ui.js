@@ -13,6 +13,7 @@ const UI = {
   checkoutBtn: document.getElementById('btn-checkout'),
 
   showLoading() {
+    console.log('⏳ Affichage du chargement');
     this.container.innerHTML = `
       <div class="text-center py-10">
         <p class="text-lg opacity-70">Chargement...</p>
@@ -21,6 +22,7 @@ const UI = {
   },
 
   showError(message) {
+    console.error('❌ Erreur affichée :', message);
     this.container.innerHTML = `
       <div class="text-center py-10">
         <p class="text-red-500 text-lg font-semibold">⚠️ Erreur</p>
@@ -35,6 +37,7 @@ const UI = {
   },
 
   renderClientCategories(categories) {
+    console.log('📋 Rendu des catégories client, nombre :', categories?.length);
     if (!categories || categories.length === 0) {
       this.container.innerHTML = `
         <div class="text-center py-10">
@@ -56,10 +59,12 @@ const UI = {
         `).join('')}
       </div>
     `;
+    console.log('✅ Catégories rendues, attributs data-category-id présents');
     this.cartBtn.classList.remove('hidden');
   },
 
   renderClientProducts(category, products) {
+    console.log('📋 Rendu des produits pour la catégorie :', category?.name, 'nombre :', products?.length);
     this.container.innerHTML = `
       <button class="glass-btn px-5 py-3 rounded-xl w-fit mb-5 text-base font-medium" data-back="true">
         ← Retour
@@ -83,9 +88,11 @@ const UI = {
         `).join('')}
       </div>
     `;
+    console.log('✅ Produits rendus, attributs data-product-id présents');
   },
 
   renderVendorView(categories, products, orders = []) {
+    console.log('👨‍💼 Rendu vue vendeur');
     this.cartBtn.classList.add('hidden');
 
     const tabs = `
@@ -118,6 +125,7 @@ const UI = {
   },
 
   _renderProductsTab(categories, products) {
+    // ... (même code que précédemment, inchangé)
     const isEditingCategory = State.currentEdit && State.currentEdit.type === 'category';
     const catData = isEditingCategory ? State.currentEdit.data : null;
 
