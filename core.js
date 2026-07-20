@@ -1,6 +1,5 @@
-// Responsable UNIQUEMENT de l'état global, du flux et de la communication.
 const State = {
-  role: 'client',
+  role: 'client',           // 'client' ou 'vendor'
   view: 'categories',
   activeCategoryId: null,
   categories: [],
@@ -8,14 +7,21 @@ const State = {
   cart: [],
   currentEdit: null,
   currentUploadedImageUrl: null,
-  uploadTarget: null
+  uploadTarget: null,
+  isVendorAuthenticated: false   // flag pour savoir si le vendeur est connecté
 };
 
 const Core = {
   async init() {
-    await this.loadData();
-    this.setupListeners();
-    this.renderCurrentState();
+    UI.showLoading();
+    try {
+      await this.loadData();
+      this.setupListeners();
+      this.renderCurrentState();
+    } catch (error) {
+      console.error('Erreur d\'initialisation :', error);
+      UI.showError('Impossible de charger les données. Vérifiez votre connexion et les règles Firestore.');
+    }
   },
 
   async loadData() {
@@ -23,17 +29,59 @@ const Core = {
     State.products = await DB.getProducts();
   },
 
+  async retryLoad() {
+    UI.showLoading();
+    try {
+      await this.loadData();
+      this.renderCurrentState();
+    } catch (error) {
+      console.error('Erreur lors du rechargement :', error);
+      UI.showError('Impossible de recharger les données. Vérifiez vos règles Firestore.');
+    }
+  },
+
   setupListeners() {
     if (this._listenersAttached) return;
     this._listenersAttached = true;
 
+    // Toggle Vendeur/Client
     document.getElementById('role-toggle').addEventListener('change', (e) => {
-      State.role = e.target.checked ? 'vendor' : 'client';
-      State.view = 'categories';
-      this.cancelEdit();
-      this.renderCurrentState();
+      const isChecked = e.target.checked;
+      if (isChecked) {
+        // On veut passer en mode vendeur => demander l'authentification
+        UI.showLoginModal();
+        // On ne change pas le rôle immédiatement, on attend la validation
+        // On remet le toggle en position initiale si l'utilisateur annule
+        // mais on garde la valeur cochée pour le moment ; on gère dans le login
+        // On va stocker que le toggle est en attente
+        this._pendingToggle = true;
+      } else {
+        // Passage en client : on déconnecte le vendeur si nécessaire
+        if (State.isVendorAuthenticated) {
+          State.isVendorAuthenticated = false;
+        }
+        State.role = 'client';
+        State.view = 'categories';
+        this.cancelEdit();
+        this.renderCurrentState();
+      }
     });
 
+    // Gestion de la modale de connexion
+    UI.loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleVendorLogin();
+    });
+
+    UI.cancelLoginBtn.addEventListener('click', () => {
+      this.handleCancelLogin();
+    });
+
+    UI.closeLoginBtn.addEventListener('click', () => {
+      this.handleCancelLogin();
+    });
+
+    // Panier
     document.getElementById('btn-cart').addEventListener('click', () => {
       UI.renderCart(State.cart);
       UI.toggleCartModal(true);
@@ -43,7 +91,48 @@ const Core = {
     });
   },
 
+  // --- AUTHENTIFICATION VENDEUR ---
+  handleVendorLogin() {
+    const email = UI.loginEmail.value.trim();
+    const password = UI.loginPassword.value.trim();
+    // Identifiants de test
+    if (email === 'admin@admin.com' && password === 'admin123') {
+      State.isVendorAuthenticated = true;
+      State.role = 'vendor';
+      State.view = 'categories';
+      this.cancelEdit();
+      UI.hideLoginModal();
+      // Le toggle est déjà coché, on le laisse
+      this._pendingToggle = false;
+      this.renderCurrentState();
+    } else {
+      UI.showLoginError('Email ou mot de passe incorrect.');
+    }
+  },
+
+  handleCancelLogin() {
+    // On décoche le toggle et on revient en mode client
+    const toggle = document.getElementById('role-toggle');
+    if (toggle.checked) {
+      toggle.checked = false;
+    }
+    this._pendingToggle = false;
+    State.role = 'client';
+    State.view = 'categories';
+    UI.hideLoginModal();
+    this.renderCurrentState();
+  },
+
+  // --- RENDU ---
   renderCurrentState() {
+    // Si le rôle est 'vendor' mais que l'utilisateur n'est pas authentifié,
+    // on force le retour en client (cas de sécurité)
+    if (State.role === 'vendor' && !State.isVendorAuthenticated) {
+      State.role = 'client';
+      const toggle = document.getElementById('role-toggle');
+      if (toggle.checked) toggle.checked = false;
+    }
+
     if (State.role === 'vendor') {
       UI.renderVendorView(State.categories, State.products);
     } else {
@@ -78,7 +167,7 @@ const Core = {
     }
   },
 
-  // --- ACTIONS VENDEUR : AJOUT ---
+  // --- ACTIONS VENDEUR ---
   async handleAddCategory() {
     const name = UI.getInputValue('cat-name');
     const imageUrl = State.currentUploadedImageUrl || null;
@@ -90,7 +179,7 @@ const Core = {
       this.renderCurrentState();
     } catch (e) {
       console.error(e.message);
-      alert(e.message);
+      UI.showError('Erreur lors de l\'ajout : ' + e.message);
     }
   },
 
@@ -107,11 +196,10 @@ const Core = {
       this.renderCurrentState();
     } catch (e) {
       console.error(e.message);
-      alert(e.message);
+      UI.showError('Erreur lors de l\'ajout : ' + e.message);
     }
   },
 
-  // --- ACTIONS VENDEUR : MODIFICATION ---
   async startEditCategory(id) {
     const cat = await DB.getCategoryById(id);
     if (!cat) return;
@@ -146,7 +234,7 @@ const Core = {
       this.renderCurrentState();
     } catch (e) {
       console.error(e.message);
-      alert(e.message);
+      UI.showError('Erreur lors de la mise à jour : ' + e.message);
     }
   },
 
@@ -164,11 +252,11 @@ const Core = {
       this.renderCurrentState();
     } catch (e) {
       console.error(e.message);
-      alert(e.message);
+      UI.showError('Erreur lors de la mise à jour : ' + e.message);
     }
   },
 
-  // --- CLOUDINARY WIDGET ---
+  // --- CLOUDINARY ---
   openCloudinaryWidget(target) {
     State.uploadTarget = target;
     if (!window.cloudinary) {
@@ -202,19 +290,9 @@ const Core = {
     widget.open();
   },
 
-  // --- NOUVEAU : basculer en mode Vendeur ---
-  switchToVendor() {
-    const toggle = document.getElementById('role-toggle');
-    if (!toggle.checked) {
-      toggle.checked = true;
-      toggle.dispatchEvent(new Event('change'));
-    } else {
-      this.renderCurrentState();
-    }
-  }
+  // (suppression de l'ancienne fonction switchToVendor)
 };
 
-// Démarrage
 document.addEventListener('DOMContentLoaded', () => {
   Core.init();
 });
