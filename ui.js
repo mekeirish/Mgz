@@ -52,21 +52,21 @@ const UI = {
       <div class="flex flex-col gap-6">
         ${categories.map(cat => `
           <button class="glass-panel p-6 rounded-2xl text-left text-xl font-medium hover:bg-white/30 transition-colors flex items-center gap-4 w-full"
-                  data-category-id="${cat.id}">
+                  onclick="Core.selectCategory('${cat.id}')">
             <img src="${cat.imageUrl}" alt="${cat.name}" class="w-12 h-12 rounded-full object-cover border border-white/30" />
             <span>${cat.name}</span>
           </button>
         `).join('')}
       </div>
     `;
-    console.log('✅ Catégories rendues, attributs data-category-id présents');
+    console.log('✅ Catégories rendues avec onclick');
     this.cartBtn.classList.remove('hidden');
   },
 
   renderClientProducts(category, products) {
     console.log('📋 Rendu des produits pour la catégorie :', category?.name, 'nombre :', products?.length);
     this.container.innerHTML = `
-      <button class="glass-btn px-5 py-3 rounded-xl w-fit mb-5 text-base font-medium" data-back="true">
+      <button class="glass-btn px-5 py-3 rounded-xl w-fit mb-5 text-base font-medium" onclick="Core.showCategories()">
         ← Retour
       </button>
       <h2 class="text-2xl font-bold mb-4">${category.name}</h2>
@@ -81,14 +81,14 @@ const UI = {
                 <div class="product-price">${Business.formatPrice(p.price)}</div>
               </div>
             </div>
-            <button class="glass-btn product-action px-5 py-3 text-sm font-medium" data-product-id="${p.id}">
+            <button class="glass-btn product-action px-5 py-3 text-sm font-medium" onclick="Core.handleAddToCart('${p.id}')">
               + Panier
             </button>
           </div>
         `).join('')}
       </div>
     `;
-    console.log('✅ Produits rendus, attributs data-product-id présents');
+    console.log('✅ Produits rendus avec onclick');
   },
 
   renderVendorView(categories, products, orders = []) {
@@ -125,7 +125,6 @@ const UI = {
   },
 
   _renderProductsTab(categories, products) {
-    // ... (même code que précédemment, inchangé)
     const isEditingCategory = State.currentEdit && State.currentEdit.type === 'category';
     const catData = isEditingCategory ? State.currentEdit.data : null;
 
