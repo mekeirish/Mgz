@@ -8,7 +8,7 @@ const Business = {
   },
 
   createCategory(name, imageUrl = null) {
-    if (!name || !name.trim()) throw new Error('Le nom de la catégorie est requis.');
+    if (!name || !name.trim()) throw new Error('Nom requis.');
     return {
       id: this.generateId(),
       name: name.trim(),
@@ -17,9 +17,9 @@ const Business = {
   },
 
   createProduct(name, price, categoryId, imageUrl = null) {
-    if (!name || !name.trim()) throw new Error('Le nom du produit est requis.');
-    if (isNaN(price) || price <= 0) throw new Error('Le prix doit être un nombre positif.');
-    if (!categoryId) throw new Error('La catégorie est requise.');
+    if (!name || !name.trim()) throw new Error('Nom requis.');
+    if (isNaN(price) || price <= 0) throw new Error('Prix invalide.');
+    if (!categoryId) throw new Error('Catégorie requise.');
     return {
       id: this.generateId(),
       name: name.trim(),
@@ -29,21 +29,9 @@ const Business = {
     };
   },
 
-  validateCategoryUpdate(name, imageUrl) {
-    if (!name || !name.trim()) throw new Error('Le nom de la catégorie est requis.');
-    return { name: name.trim(), imageUrl: imageUrl || undefined };
-  },
-
-  validateProductUpdate(name, price, categoryId, imageUrl) {
-    if (!name || !name.trim()) throw new Error('Le nom du produit est requis.');
-    if (isNaN(price) || price <= 0) throw new Error('Le prix doit être un nombre positif.');
-    if (!categoryId) throw new Error('La catégorie est requise.');
-    return {
-      name: name.trim(),
-      price: parseFloat(price),
-      categoryId,
-      imageUrl: imageUrl || undefined
-    };
+  // ✅ Cette fonction manquait
+  getProductsByCategory(products, categoryId) {
+    return products.filter(p => p.categoryId === categoryId);
   },
 
   addToCart(cart, product) {
@@ -60,8 +48,34 @@ const Business = {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   },
 
-  // ✅ FONCTION MANQUANTE AJOUTÉE
-  getProductsByCategory(products, categoryId) {
-    return products.filter(p => p.categoryId === categoryId);
+  validateCategoryUpdate(name, imageUrl) {
+    if (!name || !name.trim()) throw new Error('Nom requis.');
+    return { name: name.trim(), imageUrl: imageUrl || undefined };
+  },
+
+  validateProductUpdate(name, price, categoryId, imageUrl) {
+    if (!name || !name.trim()) throw new Error('Nom requis.');
+    if (isNaN(price) || price <= 0) throw new Error('Prix invalide.');
+    if (!categoryId) throw new Error('Catégorie requise.');
+    return {
+      name: name.trim(),
+      price: parseFloat(price),
+      categoryId,
+      imageUrl: imageUrl || undefined
+    };
+  },
+
+  // Fonction pour créer une commande
+  createOrder(cart, clientName = 'Client') {
+    if (!cart || cart.length === 0) throw new Error('Panier vide.');
+    const total = this.calculateCartTotal(cart);
+    return {
+      id: this.generateId(),
+      items: cart.map(item => ({ ...item })),
+      total,
+      clientName,
+      status: 'en attente',
+      createdAt: new Date().toISOString()
+    };
   }
 };
