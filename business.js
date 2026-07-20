@@ -8,14 +8,12 @@ const Business = {
     return parseFloat(price).toFixed(2) + ' €';
   },
 
-  // --- Traitement des données utilisateur Facebook ---
+  // --- Traitement des données utilisateur (fonctionne aussi pour Google) ---
   processFacebookUser(user) {
     if (!user) return null;
-    // Extraire les informations disponibles
     const name = user.displayName || 'Utilisateur';
     const email = user.email || '';
     const photoURL = user.photoURL || 'https://via.placeholder.com/150';
-    // Le rôle par défaut est 'client'
     const role = 'client';
     return {
       uid: user.uid,
