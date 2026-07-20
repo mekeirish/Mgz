@@ -11,15 +11,7 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-  <!-- Enregistrement du service worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker enregistré ✓'))
-        .catch(err => console.error('Erreur SW :', err));
-    }
-  </script>
+  <!-- On retire Messaging pour éviter les erreurs -->
 </head>
 <body class="bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200 min-h-screen text-gray-800 font-sans antialiased overflow-x-hidden leading-relaxed">
 
@@ -58,21 +50,6 @@
       <button id="btn-checkout" class="glass-btn w-full py-3 text-lg font-medium mt-2 hidden">
         🛍️ Commander
       </button>
-    </div>
-  </div>
-
-  <!-- Modale de connexion Vendeur -->
-  <div id="vendor-login-modal" class="fixed inset-0 z-50 hidden flex-col items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" id="close-login"></div>
-    <div class="glass-panel w-full max-w-sm p-8 rounded-3xl relative z-10">
-      <h2 class="text-2xl font-bold mb-6 text-center">Accès Vendeur</h2>
-      <form id="vendor-login-form" class="flex flex-col gap-4">
-        <input type="email" id="login-email" placeholder="Email" class="glass-input w-full" value="admin@admin.com" />
-        <input type="password" id="login-password" placeholder="Mot de passe" class="glass-input w-full" value="admin123" />
-        <button type="submit" class="glass-btn w-full py-3 text-lg font-medium">Se connecter</button>
-        <button type="button" id="cancel-login" class="glass-btn w-full py-2 text-sm opacity-70">Annuler</button>
-      </form>
-      <p id="login-error" class="text-red-500 text-sm mt-2 hidden"></p>
     </div>
   </div>
 
