@@ -19,7 +19,6 @@ const UI = {
   showApp(userData) {
     this.loginScreen.classList.add('hidden');
     this.appWrapper.classList.remove('hidden');
-    // Mettre à jour les infos utilisateur dans le header
     if (userData) {
       this.userAvatar.src = userData.avatar || 'https://via.placeholder.com/40';
       this.userAvatar.classList.remove('hidden');
@@ -74,13 +73,9 @@ const UI = {
     `;
   },
 
-  // --- VUE VENDEUR ---
+  // --- VUE VENDEUR (inchangée) ---
   renderVendorView(categories, products) {
     this.cartBtn.classList.add('hidden');
-
-    // ... (le code de la vue vendeur est inchangé, on le reprend intégralement)
-    // Pour éviter de dupliquer, on le réutilise depuis la version précédente.
-    // Je vais copier le contenu complet de la fonction ici pour être exhaustif.
 
     const isEditingCategory = State.currentEdit && State.currentEdit.type === 'category';
     const catData = isEditingCategory ? State.currentEdit.data : null;
@@ -182,14 +177,12 @@ const UI = {
 
   // --- METTRE À JOUR LA PREVIEW D'IMAGE ---
   updateImagePreview(imageUrl) {
-    // on met à jour l'aperçu dans le formulaire actif
     const previews = this.container.querySelectorAll('.vendor-form img');
     if (previews.length) {
       const img = previews[previews.length - 1];
       img.src = imageUrl;
       img.alt = 'Aperçu';
     } else {
-      // si pas de preview, re-render
       this.renderVendorView(State.categories, State.products);
     }
   },
@@ -240,7 +233,7 @@ const UI = {
     const el = document.getElementById(id);
     if (!el) return '';
     const val = el.value;
-    el.value = ''; // reset après récupération
+    el.value = '';
     return val;
   },
 
