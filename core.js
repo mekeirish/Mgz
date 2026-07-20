@@ -13,7 +13,6 @@ const State = {
 
 const Core = {
   async init() {
-    // Charger les données au démarrage
     await this.loadData();
     this.setupListeners();
     this.renderCurrentState();
@@ -28,7 +27,6 @@ const Core = {
     if (this._listenersAttached) return;
     this._listenersAttached = true;
 
-    // Toggle rôle
     document.getElementById('role-toggle').addEventListener('change', (e) => {
       State.role = e.target.checked ? 'vendor' : 'client';
       State.view = 'categories';
@@ -36,7 +34,6 @@ const Core = {
       this.renderCurrentState();
     });
 
-    // Panier
     document.getElementById('btn-cart').addEventListener('click', () => {
       UI.renderCart(State.cart);
       UI.toggleCartModal(true);
@@ -203,6 +200,17 @@ const Core = {
       }
     );
     widget.open();
+  },
+
+  // --- NOUVEAU : basculer en mode Vendeur ---
+  switchToVendor() {
+    const toggle = document.getElementById('role-toggle');
+    if (!toggle.checked) {
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event('change'));
+    } else {
+      this.renderCurrentState();
+    }
   }
 };
 
