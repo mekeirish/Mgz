@@ -1,64 +1,81 @@
 // Responsable UNIQUEMENT des accès aux données et de l'authentification.
-// Configuration Firebase (à remplacer par vos propres valeurs)
+// Configuration Firebase réelle
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_PROJECT.firebaseapp.com",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_PROJECT.appspot.com",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  apiKey: "AIzaSyAgqoYuUbyVNjwACPXoZcBfFMaeBk0udoY",
+  authDomain: "mgz-project-e8de4.firebaseapp.com",
+  databaseURL: "https://mgz-project-e8de4-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mgz-project-e8de4",
+  storageBucket: "mgz-project-e8de4.firebasestorage.app",
+  messagingSenderId: "344833610568",
+  appId: "1:344833610568:web:7c4ad4f8e60acd79d5197d"
 };
 
 // Initialisation de Firebase
 firebase.initializeApp(firebaseConfig);
+
+// Références aux services
 const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Fournisseur Facebook
 const provider = new firebase.auth.FacebookAuthProvider();
-// Ajouter les permissions nécessaires
 provider.addScope('email');
 provider.addScope('public_profile');
 
+// =====================================================
+//                     BASE DE DONNÉES
+// =====================================================
 const DB = {
-  // ... (les mêmes fonctions que précédemment, avec l'ajout éventuel d'images)
-  // On garde le mock en mémoire, mais on peut y ajouter des utilisateurs si besoin.
-  _categories: [
-    { id: 'c1', name: 'Vêtements', imageUrl: 'https://via.placeholder.com/150' },
-    { id: 'c2', name: 'Électronique', imageUrl: 'https://via.placeholder.com/150' }
-  ],
-  _products: [
-    { id: 'p1', categoryId: 'c1', name: 'T-shirt Minimaliste', price: 25, imageUrl: 'https://via.placeholder.com/150' },
-    { id: 'p2', categoryId: 'c2', name: 'Écouteurs sans fil', price: 89, imageUrl: 'https://via.placeholder.com/150' }
-  ],
-
   // --- Lecture ---
-  async getCategories() { return [...this._categories]; },
-  async getProducts() { return [...this._products]; },
-  async getCategoryById(id) { return this._categories.find(c => c.id === id); },
-  async getProductById(id) { return this._products.find(p => p.id === id); },
+  async getCategories() {
+    const snapshot = await db.collection('categories').get();
+    return snapshot.docs.map(doc => doc.data());
+  },
+
+  async getProducts() {
+    const snapshot = await db.collection('products').get();
+    return snapshot.docs.map(doc => doc.data());
+  },
+
+  async getCategoryById(id) {
+    const doc = await db.collection('categories').doc(id).get();
+    return doc.exists ? doc.data() : null;
+  },
+
+  async getProductById(id) {
+    const doc = await db.collection('products').doc(id).get();
+    return doc.exists ? doc.data() : null;
+  },
 
   // --- Création ---
-  async addCategory(category) { this._categories.push(category); return category; },
-  async addProduct(product) { this._products.push(product); return product; },
+  async addCategory(category) {
+    // category doit contenir un champ 'id' généré par Business.generateId()
+    await db.collection('categories').doc(category.id).set(category);
+    return category;
+  },
+
+  async addProduct(product) {
+    await db.collection('products').doc(product.id).set(product);
+    return product;
+  },
 
   // --- Mise à jour ---
   async updateCategory(id, data) {
-    const index = this._categories.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Catégorie introuvable');
-    this._categories[index] = { ...this._categories[index], ...data };
-    return this._categories[index];
-  },
-  async updateProduct(id, data) {
-    const index = this._products.findIndex(p => p.id === id);
-    if (index === -1) throw new Error('Produit introuvable');
-    this._products[index] = { ...this._products[index], ...data };
-    return this._products[index];
+    await db.collection('categories').doc(id).update(data);
+    return this.getCategoryById(id);
   },
 
-  // ==================== AUTHENTIFICATION ====================
-  // Connexion Facebook via popup
+  async updateProduct(id, data) {
+    await db.collection('products').doc(id).update(data);
+    return this.getProductById(id);
+  },
+
+  // =====================================================
+  //                     AUTHENTIFICATION
+  // =====================================================
   async loginWithFacebook() {
     try {
       const result = await auth.signInWithPopup(provider);
-      // Le résultat contient l'utilisateur et les tokens
       return result.user;
     } catch (error) {
       console.error('Erreur connexion Facebook :', error);
@@ -66,17 +83,14 @@ const DB = {
     }
   },
 
-  // Déconnexion
   async logout() {
     await auth.signOut();
   },
 
-  // Écouteur d'état d'authentification
   onAuthStateChanged(callback) {
     return auth.onAuthStateChanged(callback);
   },
 
-  // Récupérer l'utilisateur courant (synchrone)
   getCurrentUser() {
     return auth.currentUser;
   }
