@@ -1,4 +1,3 @@
-// Responsable UNIQUEMENT des accès aux données (Firestore).
 const firebaseConfig = {
   apiKey: "AIzaSyAgqoYuUbyVNjwACPXoZcBfFMaeBk0udoY",
   authDomain: "mgz-project-e8de4.firebaseapp.com",
@@ -13,44 +12,34 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const DB = {
-  // --- Lecture ---
   async getCategories() {
     const snapshot = await db.collection('categories').get();
     return snapshot.docs.map(doc => doc.data());
   },
-
   async getProducts() {
     const snapshot = await db.collection('products').get();
     return snapshot.docs.map(doc => doc.data());
   },
-
   async getCategoryById(id) {
     const doc = await db.collection('categories').doc(id).get();
     return doc.exists ? doc.data() : null;
   },
-
   async getProductById(id) {
     const doc = await db.collection('products').doc(id).get();
     return doc.exists ? doc.data() : null;
   },
-
-  // --- Création ---
   async addCategory(category) {
     await db.collection('categories').doc(category.id).set(category);
     return category;
   },
-
   async addProduct(product) {
     await db.collection('products').doc(product.id).set(product);
     return product;
   },
-
-  // --- Mise à jour ---
   async updateCategory(id, data) {
     await db.collection('categories').doc(id).update(data);
     return this.getCategoryById(id);
   },
-
   async updateProduct(id, data) {
     await db.collection('products').doc(id).update(data);
     return this.getProductById(id);
