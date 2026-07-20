@@ -1,20 +1,43 @@
-// Responsable UNIQUEMENT de l'affichage, du HTML et des animations.
 const UI = {
   container: document.getElementById('app-container'),
   cartBtn: document.getElementById('btn-cart'),
   cartModal: document.getElementById('cart-modal'),
   cartContent: document.getElementById('cart-content'),
+  loginModal: document.getElementById('vendor-login-modal'),
+  loginForm: document.getElementById('vendor-login-form'),
+  loginEmail: document.getElementById('login-email'),
+  loginPassword: document.getElementById('login-password'),
+  loginError: document.getElementById('login-error'),
+  cancelLoginBtn: document.getElementById('cancel-login'),
+  closeLoginBtn: document.getElementById('close-login'),
 
-  // --- VUE CLIENT ---
+  showLoading() {
+    this.container.innerHTML = `
+      <div class="text-center py-10">
+        <p class="text-lg opacity-70">Chargement...</p>
+      </div>
+    `;
+  },
+
+  showError(message) {
+    this.container.innerHTML = `
+      <div class="text-center py-10">
+        <p class="text-red-500 text-lg font-semibold">⚠️ Erreur</p>
+        <p class="opacity-80 mt-2">${message}</p>
+        <button onclick="Core.retryLoad()" class="glass-btn px-5 py-2 mt-4 text-sm font-medium">
+          Réessayer
+        </button>
+      </div>
+    `;
+    this.cartBtn.classList.add('hidden');
+  },
+
+  // --- VUE CLIENT (sans bouton "Passer en vendeur") ---
   renderClientCategories(categories) {
     if (!categories || categories.length === 0) {
       this.container.innerHTML = `
         <div class="text-center py-10">
-          <p class="text-xl opacity-70 mb-6">Aucune catégorie disponible.</p>
-          <p class="text-md opacity-60 mb-6">Passez en mode Vendeur pour créer vos premières catégories et produits.</p>
-          <button onclick="Core.switchToVendor()" class="glass-btn px-6 py-3 text-lg font-medium">
-            🔄 Passer en mode Vendeur
-          </button>
+          <p class="text-xl opacity-70">Aucune catégorie disponible pour le moment.</p>
         </div>
       `;
       this.cartBtn.classList.add('hidden');
@@ -165,16 +188,22 @@ const UI = {
     `;
   },
 
-  // --- METTRE À JOUR LA PREVIEW D'IMAGE ---
-  updateImagePreview(imageUrl) {
-    const previews = this.container.querySelectorAll('.vendor-form img');
-    if (previews.length) {
-      const img = previews[previews.length - 1];
-      img.src = imageUrl;
-      img.alt = 'Aperçu';
-    } else {
-      this.renderVendorView(State.categories, State.products);
-    }
+  // --- MODALE DE CONNEXION ---
+  showLoginModal() {
+    this.loginModal.classList.remove('hidden');
+    this.loginModal.classList.add('flex');
+    this.loginError.classList.add('hidden');
+  },
+
+  hideLoginModal() {
+    this.loginModal.classList.add('hidden');
+    this.loginModal.classList.remove('flex');
+    this.loginError.classList.add('hidden');
+  },
+
+  showLoginError(message) {
+    this.loginError.textContent = message;
+    this.loginError.classList.remove('hidden');
   },
 
   // --- PANIER ---
