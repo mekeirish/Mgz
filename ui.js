@@ -4,29 +4,6 @@ const UI = {
   cartBtn: document.getElementById('btn-cart'),
   cartModal: document.getElementById('cart-modal'),
   cartContent: document.getElementById('cart-content'),
-  loginScreen: document.getElementById('login-screen'),
-  appWrapper: document.getElementById('app-wrapper'),
-  userAvatar: document.getElementById('user-avatar'),
-  userName: document.getElementById('user-name'),
-  logoutBtn: document.getElementById('btn-logout'),
-
-  // --- Gestion de l'UI selon l'utilisateur ---
-  showLoginScreen() {
-    this.loginScreen.classList.remove('hidden');
-    this.appWrapper.classList.add('hidden');
-  },
-
-  showApp(userData) {
-    this.loginScreen.classList.add('hidden');
-    this.appWrapper.classList.remove('hidden');
-    if (userData) {
-      this.userAvatar.src = userData.avatar || 'https://via.placeholder.com/40';
-      this.userAvatar.classList.remove('hidden');
-      this.userName.textContent = userData.name || 'Utilisateur';
-      this.userName.classList.remove('hidden');
-      this.logoutBtn.classList.remove('hidden');
-    }
-  },
 
   // --- VUE CLIENT ---
   renderClientCategories(categories) {
@@ -73,7 +50,7 @@ const UI = {
     `;
   },
 
-  // --- VUE VENDEUR (inchangée) ---
+  // --- VUE VENDEUR ---
   renderVendorView(categories, products) {
     this.cartBtn.classList.add('hidden');
 
